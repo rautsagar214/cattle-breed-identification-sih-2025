@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "स्मार्ट पशु पहचान",
+    "subtitle": "भारतीय किसानें लेई AI-आधारत नस्ल पहचान",
+    "badge": "SIH 2025",
+    "getStarted": "शुरू करो",
+    "login": "साइन इन",
+    "footer": "मेड इन इंडिया"
+  },
+  "auth": {
+    "login": "साइन इन",
+    "signup": "खाता बनाओ",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "welcomeBack": "वापस स्वागत",
+    "back": "पिच्छे"
+  },
+  "home": {
+    "greeting": "नमस्कार",
+    "tagline": "अपने पशु गी पहचान करो",
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "identifyBreed": "नस्ल पहचान करो"
+  },
+  "common": {
+    "back": "पिच्छे",
+    "next": "अग्गे",
+    "loading": "लोड होआ..."
+  }
+}

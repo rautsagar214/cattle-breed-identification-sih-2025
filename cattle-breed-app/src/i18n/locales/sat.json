@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "स्मार्ट गोरु चिन्हाव",
+    "subtitle": "भारतीय किसान को लागि AI-आधारित जात पहिचान",
+    "badge": "SIH 2025",
+    "getStarted": "शुरू करा",
+    "login": "साइन इन",
+    "footer": "मेड इन इंडिया"
+  },
+  "auth": {
+    "login": "साइन इन",
+    "signup": "खाता बनावा",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "welcomeBack": "वापस स्वागत",
+    "back": "पाछे"
+  },
+  "home": {
+    "greeting": "जोहार",
+    "tagline": "आपन गोरु चिन्हावा",
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "identifyBreed": "जात चिन्हावा"
+  },
+  "common": {
+    "back": "पाछे",
+    "next": "आगे",
+    "loading": "लोड होत आहे..."
+  }
+}

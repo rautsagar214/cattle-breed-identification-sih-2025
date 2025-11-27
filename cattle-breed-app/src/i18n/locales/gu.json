@@ -1,0 +1,99 @@
+{
+  "welcome": {
+    "title": "સ્માર્ટ પશુ ઓળખ",
+    "subtitle": "ભારતીય ખેડૂતો માટે એઆઈ-સંચાલિત જાતિ ઓળખ",
+    "badge": "એસઆઈએચ 2025",
+    "getStarted": "શરૂ કરો",
+    "login": "સાઇન ઇન કરો",
+    "footer": "મેડ ઇન ઇન્ડિયા",
+    "features": {
+      "aiScan": "એઆઈ સ્કેન",
+      "aiScanDesc": "તાત્કાલિક જાતિ શોધ",
+      "expertAI": "નિષ્ણાત એઆઈ",
+      "expertAIDesc": "24/7 પશુ સંભાળ સહાયક",
+      "offline": "ઑફલાઇન મોડ",
+      "offlineDesc": "ઇન્ટરનેટ વિના કામ કરે છે",
+      "multiLang": "બહુભાષી",
+      "multiLangDesc": "હિન્દી, ગુજરાતી અને વધુ"
+    }
+  },
+  "auth": {
+    "login": "સાઇન ઇન કરો",
+    "signup": "ખાતું બનાવો",
+    "email": "ઇમેઇલ",
+    "password": "પાસવર્ડ",
+    "confirmPassword": "પાસવર્ડની પુષ્ટિ કરો",
+    "fullName": "પૂરું નામ",
+    "forgotPassword": "પાસવર્ડ ભૂલી ગયા?",
+    "noAccount": "CattleAI માં નવા છો?",
+    "hasAccount": "પહેલેથી ખાતું છે?",
+    "welcomeBack": "પાછા સ્વાગત છે",
+    "getStarted": "શરૂ કરો",
+    "signInSubtitle": "તમારી યાત્રા ચાલુ રાખવા સાઇન ઇન કરો",
+    "signupSubtitle": "તમારું ખાતું બનાવો અને અમારી સાથે જોડાઓ",
+    "back": "પાછળ"
+  },
+  "home": {
+    "greeting": "નમસ્તે",
+    "tagline": "ચાલો તમારા પશુને ઓળખીએ",
+    "online": "ઑનલાઇન",
+    "offline": "ઑફલાઇન",
+    "identifyBreed": "જાતિ ઓળખો",
+    "identifyDesc": "ફોટો લો અથવા અપલોડ કરો",
+    "aiAssistant": "એઆઈ સહાયક",
+    "aiAssistantDesc": "પ્રશ્નો પૂછો",
+    "settings": "સેટિંગ્સ",
+    "settingsDesc": "ખાતું સંચાલિત કરો",
+    "syncPending": "બાકી અપલોડ્સ",
+    "syncDesc": "વસ્તુઓ સિંક થવાની રાહ જોઈ રહી છે",
+    "popularBreeds": "લોકપ્રિય ભારતીય જાતિઓ"
+  },
+  "upload": {
+    "title": "જાતિ ઓળખો",
+    "takePhoto": "ફોટો લો",
+    "chooseGallery": "ગેલેરીમાંથી પસંદ કરો",
+    "analyzing": "વિશ્લેષણ કરી રહ્યા છીએ...",
+    "permissions": "કેમેરા પરવાનગી જરૂરી છે",
+    "error": "છબી પ્રક્રિયા કરવામાં નિષ્ફળ"
+  },
+  "chatbot": {
+    "title": "એઆઈ પશુ સહાયક",
+    "subtitle": "મને કંઈપણ પૂછો!",
+    "placeholder": "પશુ સંભાળ વિશે પૂછો...",
+    "quickQuestions": "ઝડપી પ્રશ્નો",
+    "thinking": "વિચારી રહ્યા છીએ...",
+    "welcome": "નમસ્તે! હું તમારો પશુ સંભાળ સહાયક છું. પશુ જાતિઓ, આરોગ્ય, સંભાળ અથવા ખેતીની પદ્ધતિઓ વિશે મને કંઈપણ પૂછો!"
+  },
+  "settings": {
+    "title": "સેટિંગ્સ",
+    "profile": "પ્રોફાઇલ",
+    "language": "ભાષા",
+    "notifications": "સૂચનાઓ",
+    "offline": "ઑફલાઇન મોડ",
+    "about": "વિશે",
+    "logout": "લૉગઆઉટ",
+    "version": "સંસ્કરણ"
+  },
+  "breeds": {
+    "gir": "ગીર",
+    "sahiwal": "સાહીવાલ",
+    "redSindhi": "રેડ સિંધી",
+    "rathi": "રાઠી",
+    "tharparkar": "થારપારકર",
+    "kankrej": "કાંકરેજ"
+  },
+  "common": {
+    "back": "પાછળ",
+    "next": "આગળ",
+    "done": "થઈ ગયું",
+    "cancel": "રદ કરો",
+    "save": "સાચવો",
+    "delete": "કાઢી નાખો",
+    "confirm": "પુષ્ટિ કરો",
+    "yes": "હા",
+    "no": "ના",
+    "loading": "લોડ થઈ રહ્યું છે...",
+    "error": "ભૂલ",
+    "success": "સફળતા"
+  }
+}

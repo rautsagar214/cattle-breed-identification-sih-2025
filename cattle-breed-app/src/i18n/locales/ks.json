@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "स्मार्ट मवेशी पहचान",
+    "subtitle": "भारतीय किसानन खातिर AI-आधारित नस्ल पहचान",
+    "badge": "SIH 2025",
+    "getStarted": "शुरू करा",
+    "login": "साइन इन",
+    "footer": "मेड इन इंडिया"
+  },
+  "auth": {
+    "login": "साइन इन",
+    "signup": "खाता बनावा",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "welcomeBack": "वापस स्वागत",
+    "back": "वापस"
+  },
+  "home": {
+    "greeting": "नमस्कार",
+    "tagline": "अपन मवेशी पहचाना",
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "identifyBreed": "नस्ल पहचाना"
+  },
+  "common": {
+    "back": "वापस",
+    "next": "अगला",
+    "loading": "लोड हो रहा..."
+  }
+}

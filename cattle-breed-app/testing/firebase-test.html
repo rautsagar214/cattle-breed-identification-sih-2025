@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Firebase Auth Test</title>
+    <script type="module">
+        // Import Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjXP6mS-h_Lcwbc-i3uSdoonZJcPZTRRw",
+            authDomain: "cattle-breed-app.firebaseapp.com",
+            projectId: "cattle-breed-app",
+            storageBucket: "cattle-breed-app.firebasestorage.app",
+            messagingSenderId: "173489498384",
+            appId: "1:173489498384:web:ee2f7ba04afef44f3b9d95"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        console.log('✅ Firebase initialized');
+
+        // Test signup
+        window.testSignup = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const output = document.getElementById('output');
+            
+            output.innerHTML = '⏳ Testing signup...';
+            
+            try {
+                const result = await createUserWithEmailAndPassword(auth, email, password);
+                output.innerHTML = `✅ SUCCESS! User created: ${result.user.uid}<br>Email: ${result.user.email}`;
+                console.log('User created:', result.user);
+            } catch (error) {
+                output.innerHTML = `❌ ERROR: ${error.code}<br>${error.message}`;
+                console.error('Signup error:', error);
+            }
+        };
+
+        // Test login
+        window.testLogin = async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const output = document.getElementById('output');
+            
+            output.innerHTML = '⏳ Testing login...';
+            
+            try {
+                const result = await signInWithEmailAndPassword(auth, email, password);
+                output.innerHTML = `✅ SUCCESS! Logged in: ${result.user.uid}<br>Email: ${result.user.email}`;
+                console.log('Logged in:', result.user);
+            } catch (error) {
+                output.innerHTML = `❌ ERROR: ${error.code}<br>${error.message}`;
+                console.error('Login error:', error);
+            }
+        };
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 48%;
+            padding: 12px;
+            margin: 10px 1%;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-signup {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-login {
+            background: #2196F3;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #2196F3;
+            min-height: 50px;
+        }
+        .info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .step {
+            background: #e7f3ff;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Auth Test</h1>
+        
+        <div class="info">
+            <strong>⚠️ BEFORE TESTING:</strong><br>
+            Go to <a href="https://console.firebase.google.com/project/cattle-breed-app/authentication/providers" target="_blank">Firebase Console</a> and make sure:<br>
+            1. Authentication → Sign-in method<br>
+            2. Enable "Email/Password" (toggle ON)
+        </div>
+
+        <div class="step">
+            <strong>Step 1:</strong> Try Signup first (creates new user)
+        </div>
+
+        <input type="email" id="email" placeholder="Email (e.g., test@example.com)" value="test@example.com">
+        <input type="password" id="password" placeholder="Password (min 6 chars)" value="Test123!">
+        
+        <button class="btn-signup" onclick="testSignup()">🔐 Test Signup</button>
+        <button class="btn-login" onclick="testLogin()">🔓 Test Login</button>
+        
+        <div id="output">Click a button to test...</div>
+
+        <div class="step">
+            <strong>What to check:</strong><br>
+            • If you see "auth/operation-not-allowed" → Email/Password auth is NOT enabled<br>
+            • If you see "auth/email-already-in-use" → User exists, try Login instead<br>
+            • If you see "SUCCESS!" → Firebase is working! Check your app code
+        </div>
+
+        <div class="info">
+            <strong>✅ If SUCCESS:</strong> Go to <a href="https://console.firebase.google.com/project/cattle-breed-app/authentication/users" target="_blank">Firebase Users</a> to see the new user
+        </div>
+    </div>
+</body>
+</html>

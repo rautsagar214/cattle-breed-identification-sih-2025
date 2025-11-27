@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "ਸਮਾਰਟ ਪਸ਼ੂ ਪਛਾਣ",
+    "subtitle": "ਭਾਰਤੀ ਕਿਸਾਨਾਂ ਲਈ AI-ਅਧਾਰਿਤ ਨਸਲ ਪਛਾਣ",
+    "badge": "SIH 2025",
+    "getStarted": "ਸ਼ੁਰੂ ਕਰੋ",
+    "login": "ਸਾਇਨ ਇਨ",
+    "footer": "ਮੇਡ ਇਨ ਇੰਡੀਆ"
+  },
+  "auth": {
+    "login": "ਸਾਇਨ ਇਨ",
+    "signup": "ਖਾਤਾ ਬਣਾਓ",
+    "email": "ਈਮੇਲ",
+    "password": "ਪਾਸਵਰਡ",
+    "welcomeBack": "ਵਾਪਸੀ ਦਾ ਸੁਆਗਤ",
+    "back": "ਪਿੱਛੇ"
+  },
+  "home": {
+    "greeting": "ਸਤ ਸ੍ਰੀ ਅਕਾਲ",
+    "tagline": "ਆਪਣੇ ਪਸ਼ੂ ਦੀ ਪਛਾਣ ਕਰੋ",
+    "online": "ਆਨਲਾਈਨ",
+    "offline": "ਆਫਲਾਈਨ",
+    "identifyBreed": "ਨਸਲ ਦੀ ਪਛਾਣ ਕਰੋ"
+  },
+  "common": {
+    "back": "ਪਿੱਛੇ",
+    "next": "ਅਗਲਾ",
+    "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ..."
+  }
+}

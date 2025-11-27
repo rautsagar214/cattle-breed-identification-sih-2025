@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "स्मार्ट गोरवां वळख",
+    "subtitle": "भारतीय शेतकऱ्यांखातीर AI-आधारीत जात वळख",
+    "badge": "SIH 2025",
+    "getStarted": "सुरू करा",
+    "login": "साइन इन",
+    "footer": "मेड इन इंडिया"
+  },
+  "auth": {
+    "login": "साइन इन",
+    "signup": "खातें तयार करा",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "welcomeBack": "परत स्वागत",
+    "back": "पाटीं"
+  },
+  "home": {
+    "greeting": "नमस्कार",
+    "tagline": "तुमचे गोरवां वळखा",
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "identifyBreed": "जात वळखा"
+  },
+  "common": {
+    "back": "पाटीं",
+    "next": "मुखार",
+    "loading": "लोड जाता..."
+  }
+}

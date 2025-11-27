@@ -1,0 +1,102 @@
+{
+  "welcome": {
+    "title": "Smart Cattle Recognition",
+    "subtitle": "AI-powered breed identification for Indian farmers",
+    "badge": "SIH 2025",
+    "getStarted": "Get Started",
+    "login": "Sign In",
+    "footer": "Made in India",
+    "features": {
+      "aiScan": "AI Scan",
+      "aiScanDesc": "Instant breed detection",
+      "expertAI": "Expert AI",
+      "expertAIDesc": "24/7 cattle care assistant",
+      "offline": "Offline Mode",
+      "offlineDesc": "Works without internet",
+      "multiLang": "Multi-Language",
+      "multiLangDesc": "Hindi, Gujarati & more"
+    }
+  },
+  "auth": {
+    "login": "Sign In",
+    "signup": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "fullName": "Full Name",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "New to CattleAI?",
+    "hasAccount": "Already have an account?",
+    "welcomeBack": "Welcome Back",
+    "getStarted": "Get Started",
+    "signInSubtitle": "Sign in to continue your journey",
+    "signupSubtitle": "Create your account and join us",
+    "back": "Back"
+  },
+  "home": {
+    "greeting": "Hello",
+    "tagline": "Let's identify your cattle",
+    "online": "Online",
+    "offline": "Offline",
+    "identifyBreed": "Identify Breed",
+    "identifyDesc": "Take or upload a photo",
+    "aiAssistant": "AI Assistant",
+    "aiAssistantDesc": "Ask questions",
+    "settings": "Settings",
+    "settingsDesc": "Manage account",
+    "syncPending": "Pending Uploads",
+    "syncDesc": "items waiting to sync",
+    "popularBreeds": "Popular Indian Breeds"
+  },
+  "upload": {
+    "title": "Identify Breed",
+    "takePhoto": "Take Photo",
+    "chooseGallery": "Choose from Gallery",
+    "analyzing": "Analyzing...",
+    "permissions": "Camera permission required",
+    "error": "Failed to process image",
+    "initializing": "Initializing AI model...",
+    "fetchingDetails": "Fetching breed details...",
+    "translating": "Translating to your language..."
+  },
+  "chatbot": {
+    "title": "AI Cattle Assistant",
+    "subtitle": "Ask me anything!",
+    "placeholder": "Ask about cattle care...",
+    "quickQuestions": "Quick Questions",
+    "thinking": "Thinking...",
+    "welcome": "Hello! I am your cattle care assistant. Ask me anything about cattle breeds, health, care, or farming practices!"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "language": "Language",
+    "notifications": "Notifications",
+    "offline": "Offline Mode",
+    "about": "About",
+    "logout": "Logout",
+    "version": "Version"
+  },
+  "breeds": {
+    "gir": "Gir",
+    "sahiwal": "Sahiwal",
+    "redSindhi": "Red Sindhi",
+    "rathi": "Rathi",
+    "tharparkar": "Tharparkar",
+    "kankrej": "Kankrej"
+  },
+  "common": {
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  }
+}

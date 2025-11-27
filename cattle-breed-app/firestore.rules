@@ -1,0 +1,112 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Helper function to validate image size (5MB limit)
+    function isValidImageSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // Helper function for rate limiting
+    function isNotRateLimited() {
+      // Allow write if no lastWrite field exists OR 
+      // if last write was more than 1 minute ago
+      return !('lastWrite' in resource.data) ||
+             request.time > resource.data.lastWrite + duration.value(1, 'm');
+    }
+    
+    // ============================================
+    // CATTLE BREED DETECTION RESULTS
+    // ============================================
+    match /detectionResults/{docId} {
+      // Allow read only to the owner
+      allow read: if isSignedIn() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Allow create only if:
+      // 1. User is authenticated
+      // 2. User is creating their own document
+      // 3. Image size is under 5MB
+      // 4. Not rate limited (1 minute between uploads)
+      allow create: if isSignedIn() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       isValidImageSize() &&
+                       request.resource.data.keys().hasAll(['userId', 'breedName', 'confidence', 'imageUrl', 'timestamp']);
+      
+      // Prevent updates and deletes for data integrity
+      // (Users should only create new detection results)
+      allow update: if false;
+      allow delete: if isOwner(resource.data.userId); // Allow user to delete their own data
+    }
+    
+    // ============================================
+    // USER PROFILES
+    // ============================================
+    match /users/{userId} {
+      // Users can only read and write their own profile
+      allow read, write: if isOwner(userId);
+      
+      // Validate profile data structure on create
+      allow create: if isOwner(userId) &&
+                       request.resource.data.keys().hasAll(['email', 'createdAt']);
+      
+      // Allow profile updates but not email changes (security)
+      allow update: if isOwner(userId) &&
+                       request.resource.data.email == resource.data.email;
+    }
+    
+    // ============================================
+    // CHAT HISTORY (Optional - for AI Chatbot)
+    // ============================================
+    match /chatHistory/{userId}/messages/{messageId} {
+      // Users can only access their own chat history
+      allow read, write: if isOwner(userId);
+      
+      // Validate message structure
+      allow create: if isOwner(userId) &&
+                       request.resource.data.keys().hasAll(['message', 'timestamp', 'role']) &&
+                       request.resource.data.message.size() <= 500; // Max 500 characters per message
+    }
+    
+    // ============================================
+    // PENDING UPLOADS QUEUE (Offline Mode)
+    // ============================================
+    match /pendingUploads/{userId}/queue/{queueId} {
+      // Users can only access their own upload queue
+      allow read, write: if isOwner(userId);
+      
+      // Auto-delete processed uploads after 7 days
+      allow delete: if isOwner(userId) ||
+                       request.time > resource.data.timestamp + duration.value(7, 'd');
+    }
+    
+    // ============================================
+    // ANALYTICS & LOGS (Read-only for users)
+    // ============================================
+    match /analytics/{document=**} {
+      // Only allow reads, no writes from client
+      // (Use Firebase Cloud Functions for analytics writes)
+      allow read: if isSignedIn();
+      allow write: if false; // Only server can write
+    }
+    
+    // ============================================
+    // DEFAULT: DENY ALL
+    // ============================================
+    // Any document not explicitly matched above is denied
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

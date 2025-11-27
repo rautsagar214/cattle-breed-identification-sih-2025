@@ -1,0 +1,99 @@
+{
+  "welcome": {
+    "title": "स्मार्ट पशु पहचान",
+    "subtitle": "भारतीय किसानों के लिए एआई-संचालित नस्ल पहचान",
+    "badge": "एसआईएच 2025",
+    "getStarted": "शुरू करें",
+    "login": "साइन इन करें",
+    "footer": "मेड इन इंडिया",
+    "features": {
+      "aiScan": "एआई स्कैन",
+      "aiScanDesc": "तुरंत नस्ल की पहचान",
+      "expertAI": "विशेषज्ञ एआई",
+      "expertAIDesc": "24/7 पशु देखभाल सहायक",
+      "offline": "ऑफलाइन मोड",
+      "offlineDesc": "इंटरनेट के बिना काम करता है",
+      "multiLang": "बहुभाषी",
+      "multiLangDesc": "हिंदी, गुजराती और अधिक"
+    }
+  },
+  "auth": {
+    "login": "साइन इन करें",
+    "signup": "खाता बनाएं",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "confirmPassword": "पासवर्ड की पुष्टि करें",
+    "fullName": "पूरा नाम",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "noAccount": "CattleAI में नए हैं?",
+    "hasAccount": "पहले से खाता है?",
+    "welcomeBack": "वापसी पर स्वागत है",
+    "getStarted": "शुरू करें",
+    "signInSubtitle": "अपनी यात्रा जारी रखने के लिए साइन इन करें",
+    "signupSubtitle": "अपना खाता बनाएं और हमसे जुड़ें",
+    "back": "वापस"
+  },
+  "home": {
+    "greeting": "नमस्ते",
+    "tagline": "आइए अपने पशु की पहचान करें",
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "identifyBreed": "नस्ल पहचानें",
+    "identifyDesc": "फोटो लें या अपलोड करें",
+    "aiAssistant": "एआई सहायक",
+    "aiAssistantDesc": "सवाल पूछें",
+    "settings": "सेटिंग्स",
+    "settingsDesc": "खाता प्रबंधित करें",
+    "syncPending": "लंबित अपलोड",
+    "syncDesc": "आइटम सिंक की प्रतीक्षा में",
+    "popularBreeds": "लोकप्रिय भारतीय नस्लें"
+  },
+  "upload": {
+    "title": "नस्ल पहचानें",
+    "takePhoto": "फोटो लें",
+    "chooseGallery": "गैलरी से चुनें",
+    "analyzing": "विश्लेषण कर रहे हैं...",
+    "permissions": "कैमरा अनुमति आवश्यक है",
+    "error": "छवि संसाधित करने में विफल"
+  },
+  "chatbot": {
+    "title": "एआई पशु सहायक",
+    "subtitle": "मुझसे कुछ भी पूछें!",
+    "placeholder": "पशु देखभाल के बारे में पूछें...",
+    "quickQuestions": "त्वरित प्रश्न",
+    "thinking": "सोच रहा हूँ...",
+    "welcome": "नमस्ते! मैं आपका पशु देखभाल सहायक हूं। पशु नस्लों, स्वास्थ्य, देखभाल या खेती की प्रथाओं के बारे में मुझसे कुछ भी पूछें!"
+  },
+  "settings": {
+    "title": "सेटिंग्स",
+    "profile": "प्रोफाइल",
+    "language": "भाषा",
+    "notifications": "सूचनाएं",
+    "offline": "ऑफलाइन मोड",
+    "about": "के बारे में",
+    "logout": "लॉगआउट",
+    "version": "संस्करण"
+  },
+  "breeds": {
+    "gir": "गिर",
+    "sahiwal": "साहीवाल",
+    "redSindhi": "रेड सिंधी",
+    "rathi": "राठी",
+    "tharparkar": "थारपारकर",
+    "kankrej": "कांकरेज"
+  },
+  "common": {
+    "back": "वापस",
+    "next": "अगला",
+    "done": "हो गया",
+    "cancel": "रद्द करें",
+    "save": "सहेजें",
+    "delete": "हटाएं",
+    "confirm": "पुष्टि करें",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "loading": "लोड हो रहा है...",
+    "error": "त्रुटि",
+    "success": "सफलता"
+  }
+}

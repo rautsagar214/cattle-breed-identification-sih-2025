@@ -1,0 +1,30 @@
+{
+  "welcome": {
+    "title": "स्मार्ट गुरे ओळख",
+    "subtitle": "भारतीय शेतकऱ्यांसाठी AI-आधारित जात ओळख",
+    "badge": "SIH 2025",
+    "getStarted": "सुरू करा",
+    "login": "साइन इन",
+    "footer": "मेड इन इंडिया"
+  },
+  "auth": {
+    "login": "साइन इन",
+    "signup": "खाते तयार करा",
+    "email": "ईमेल",
+    "password": "पासवर्ड",
+    "welcomeBack": "पुन्हा स्वागत",
+    "back": "मागे"
+  },
+  "home": {
+    "greeting": "नमस्कार",
+    "tagline": "तुमच्या गुरांची ओळख करा",
+    "online": "ऑनलाइन",
+    "offline": "ऑफलाइन",
+    "identifyBreed": "जात ओळखा"
+  },
+  "common": {
+    "back": "मागे",
+    "next": "पुढे",
+    "loading": "लोड होत आहे..."
+  }
+}
