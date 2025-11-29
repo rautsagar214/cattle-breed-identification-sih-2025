@@ -20,7 +20,7 @@ const generateToken = (user) => {
 // @access  Public
 const register = async (req, res) => {
   try {
-    const { email, password, name, phone } = req.body;
+    const { email, password, name, phone, address } = req.body;
 
     // Validation
     if (!email || !password) {
@@ -49,7 +49,7 @@ const register = async (req, res) => {
 
     // Check if user exists
     const [existingUsers] = await promisePool.query(
-      'SELECT id FROM users WHERE email = ?',
+      'SELECT id FROM workers WHERE email = ?',
       [email]
     );
 
@@ -66,13 +66,13 @@ const register = async (req, res) => {
 
     // Insert user
     const [result] = await promisePool.query(
-      'INSERT INTO users (email, password, name, phone) VALUES (?, ?, ?, ?)',
-      [email, hashedPassword, name || null, phone || null]
+      'INSERT INTO workers (email, password, name, phone, address) VALUES (?, ?, ?, ?, ?)',
+      [email, hashedPassword, name || null, phone || null, address || null]
     );
 
     // Get created user
     const [users] = await promisePool.query(
-      'SELECT id, email, name, phone, role, created_at FROM users WHERE id = ?',
+      'SELECT id, email, name, phone, address, role, created_at FROM workers WHERE id = ?',
       [result.insertId]
     );
 
@@ -90,6 +90,7 @@ const register = async (req, res) => {
           email: user.email,
           name: user.name,
           phone: user.phone,
+          address: user.address,
           role: user.role
         },
         token
@@ -121,7 +122,7 @@ const login = async (req, res) => {
 
     // Get user from database
     const [users] = await promisePool.query(
-      'SELECT * FROM users WHERE email = ?',
+      'SELECT * FROM workers WHERE email = ?',
       [email]
     );
 
@@ -156,6 +157,7 @@ const login = async (req, res) => {
           email: user.email,
           name: user.name,
           phone: user.phone,
+          address: user.address,
           role: user.role
         },
         token
@@ -176,7 +178,7 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const [users] = await promisePool.query(
-      'SELECT id, email, name, phone, role, created_at FROM users WHERE id = ?',
+      'SELECT id, email, name, phone, address, role, created_at FROM workers WHERE id = ?',
       [req.user.id]
     );
 
@@ -207,7 +209,7 @@ const getMe = async (req, res) => {
 // @access  Private
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const { name, phone, address } = req.body;
     const userId = req.user.id;
 
     // Build update query dynamically
@@ -222,6 +224,10 @@ const updateProfile = async (req, res) => {
       updates.push('phone = ?');
       values.push(phone);
     }
+    if (address !== undefined) {
+      updates.push('address = ?');
+      values.push(address);
+    }
 
     if (updates.length === 0) {
       return res.status(400).json({
@@ -233,13 +239,13 @@ const updateProfile = async (req, res) => {
     values.push(userId);
 
     await promisePool.query(
-      `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      `UPDATE workers SET ${updates.join(', ')} WHERE id = ?`,
       values
     );
 
     // Get updated user
     const [users] = await promisePool.query(
-      'SELECT id, email, name, phone, role FROM users WHERE id = ?',
+      'SELECT id, email, name, phone, address, role FROM workers WHERE id = ?',
       [userId]
     );
 

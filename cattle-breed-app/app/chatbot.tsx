@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
@@ -28,7 +29,7 @@ export default function ChatbotScreen(): React.JSX.Element {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -57,6 +58,16 @@ export default function ChatbotScreen(): React.JSX.Element {
     if (!user) {
       Alert.alert('Not Logged In', 'Please login to use the chatbot');
       router.push('/login' as any);
+      return;
+    }
+
+    // Check Network Status
+    const netState = await NetInfo.fetch();
+    if (!netState.isConnected || netState.isInternetReachable === false) {
+      Alert.alert(
+        'Offline',
+        'Connect to internet to use chatbot.\n\nAI features require an active internet connection.'
+      );
       return;
     }
 
@@ -97,7 +108,7 @@ export default function ChatbotScreen(): React.JSX.Element {
         isBot: msg.isBot,
         text: msg.text,
       }));
-      
+
       // Call Gemini API with language parameter
       console.log('📤 Sending to Gemini (Language:', language, '):', questionText);
       const responseText = await sendMessageToGemini(questionText, chatHistory, language);
@@ -113,10 +124,10 @@ export default function ChatbotScreen(): React.JSX.Element {
     } catch (error: any) {
       console.error('❌ Chat error:', error);
       console.error('Error details:', error.message);
-      
+
       // Show more helpful error message
       let errorMessage = 'Sorry, I encountered an error. ';
-      
+
       if (error.message.includes('API key')) {
         errorMessage += 'API key issue detected.';
       } else if (error.message.includes('network') || error.message.includes('fetch')) {
@@ -126,7 +137,7 @@ export default function ChatbotScreen(): React.JSX.Element {
       } else {
         errorMessage += 'Please try again or contact support.';
       }
-      
+
       const errorResponse: Message = {
         id: Date.now() + 1,
         text: errorMessage + '\n\n(Error: ' + error.message + ')',
@@ -141,23 +152,23 @@ export default function ChatbotScreen(): React.JSX.Element {
 
   const getBotResponse = (question: string): string => {
     const q = question.toLowerCase();
-    
+
     if (q.includes('gir')) {
       return 'Gir cattle are one of the best indigenous dairy breeds from India. They have:\n\n- Distinctive lyre-shaped horns\n- White to reddish-brown coat\n- Excellent milk production (10-12 liters/day)\n- High disease resistance\n\nFor best care:\n- Provide clean water (30-40 liters/day)\n- Feed green fodder & concentrate\n- Regular milking schedule\n- Maintain clean shelter';
     }
-    
+
     if (q.includes('feed') || q.includes('diet')) {
       return 'A balanced cattle diet should include:\n\nRoughage (60-70%):\n- Green grass\n- Dry fodder\n- Silage\n\nConcentrate (30-40%):\n- Cattle feed\n- Mineral mixture\n- Salt\n\nWater:\n- Clean, fresh water always available\n- 30-50 liters per day per animal\n\nAdjust quantities based on milk production and body weight.';
     }
-    
+
     if (q.includes('illness') || q.includes('disease') || q.includes('sick')) {
       return 'Common signs of cattle illness:\n\nWatch for:\n- Loss of appetite\n- Reduced milk production\n- Dull or sunken eyes\n- Rough hair coat\n- Discharge from nose/eyes\n- Difficulty breathing\n- Lameness or stiffness\n- Abnormal temperature (>102.5F)\n\nAction:\n- Isolate sick animal\n- Call veterinarian immediately\n- Keep records of symptoms';
     }
-    
+
     if (q.includes('vaccine') || q.includes('vaccination')) {
       return 'Essential cattle vaccination schedule:\n\nMust-have vaccines:\n\n1. FMD (Foot & Mouth Disease)\n   - Every 6 months\n\n2. HS (Haemorrhagic Septicaemia)\n   - Annual\n\n3. BQ (Black Quarter)\n   - Annual (6-24 months age)\n\n4. Anthrax\n   - Annual in endemic areas\n\nConsult local vet for area-specific requirements and timing.';
     }
-    
+
     return 'I can help you with:\n\n- Cattle breed information\n- Health & disease management\n- Feeding & nutrition\n- Vaccination schedules\n- Housing & shelter\n- Milk production tips\n\nPlease ask a specific question about any of these topics!';
   };
 

@@ -109,7 +109,7 @@ export const registerUser = async (
   } catch (error: any) {
     console.error('❌ Registration error:', error.response?.data || error.message);
     throw new Error(
-      error.response?.data?.message || 
+      error.response?.data?.message ||
       'Registration failed. Please try again.'
     );
   }
@@ -139,7 +139,7 @@ export const loginUser = async (
   } catch (error: any) {
     console.error('❌ Login error:', error.response?.data || error.message);
     throw new Error(
-      error.response?.data?.message || 
+      error.response?.data?.message ||
       'Login failed. Please check your credentials.'
     );
   }
@@ -151,7 +151,7 @@ export const loginUser = async (
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
     const token = await AsyncStorage.getItem(TOKEN_KEY);
-    
+
     if (!token) {
       return null;
     }
@@ -165,12 +165,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return user;
   } catch (error: any) {
     console.error('❌ Get current user error:', error.response?.data || error.message);
-    
+
     // If unauthorized, clear auth data
     if (error.response?.status === 401) {
       await clearAuth();
     }
-    
+
     return null;
   }
 };
@@ -198,7 +198,7 @@ export const updateProfile = async (
   } catch (error: any) {
     console.error('❌ Update profile error:', error.response?.data || error.message);
     throw new Error(
-      error.response?.data?.message || 
+      error.response?.data?.message ||
       'Failed to update profile. Please try again.'
     );
   }

@@ -1,0 +1,58 @@
+# Node modules
+node_modules/
+
+# Logs
+yarn-error.log
+npm-debug.log
+*.log
+
+# Expo / Metro caches
+.expo/
+.expo-shared/
+.expo/packager-info.json
+.expo/manifest.json
+
+# Android build caches
+android/.gradle/
+android/app/build/
+android/build/
+android/.cxx/
+android/local.properties
+
+# iOS build caches
+ios/Pods/
+ios/build/
+ios/*.xcworkspace
+ios/*.xcuserdata
+ios/Podfile.lock
+
+# OS & editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Testing / debug
+coverage/
+__tests__/
+*.tmp
+
+# Environment files
+.env
+.env.*
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+
+# EAS build artifacts
+dist/
+web-build/
+*.apk
+*.aab
+*.ipa

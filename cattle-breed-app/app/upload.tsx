@@ -15,7 +15,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useNetwork } from '../src/contexts/NetworkContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
-import { uploadImage, saveResult } from '../src/services/firebase';
 import {
   saveImageLocally,
   saveResultOffline,
@@ -67,7 +66,7 @@ export default function UploadScreen(): React.JSX.Element {
 
     if (!result.canceled && result.assets[0]) {
       const image = result.assets[0];
-      
+
       // Validate image size (max 5MB)
       if (image.fileSize) {
         const sizeCheck = validateImageSize(image.fileSize, 5);
@@ -76,7 +75,7 @@ export default function UploadScreen(): React.JSX.Element {
           return;
         }
       }
-      
+
       // Validate image type
       if (image.mimeType) {
         const typeCheck = validateImageType(image.mimeType);
@@ -85,7 +84,7 @@ export default function UploadScreen(): React.JSX.Element {
           return;
         }
       }
-      
+
       setSelectedImage(image.uri);
     }
   };
@@ -102,7 +101,7 @@ export default function UploadScreen(): React.JSX.Element {
 
     if (!result.canceled && result.assets[0]) {
       const image = result.assets[0];
-      
+
       // Validate image size (max 5MB)
       if (image.fileSize) {
         const sizeCheck = validateImageSize(image.fileSize, 5);
@@ -111,7 +110,7 @@ export default function UploadScreen(): React.JSX.Element {
           return;
         }
       }
-      
+
       // Validate image type
       if (image.mimeType) {
         const typeCheck = validateImageType(image.mimeType);
@@ -120,7 +119,7 @@ export default function UploadScreen(): React.JSX.Element {
           return;
         }
       }
-      
+
       setSelectedImage(image.uri);
     }
   };
@@ -138,218 +137,41 @@ export default function UploadScreen(): React.JSX.Element {
     }
 
     setIsAnalyzing(true);
+    setIsAnalyzing(true);
     try {
-      // Step 1: Analyze with TFLite (works offline when model added)
+      // Step 1: Check Network Status
+      // If Online: Show alert and STOP (as per user request)
+      if (isOnline) {
+        Alert.alert(
+          'Online Mode',
+          'Breed detection is currently disabled in online mode.\n\nPlease disconnect from internet to use the offline TFLite model.',
+          [{ text: 'OK' }]
+        );
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Step 2: Offline Mode - Run TFLite
       setUploadProgress(t('upload.initializing') || 'Initializing model...');
       await initializeModel(); // no-op if already initialized
 
       setUploadProgress(t('upload.analyzing') || 'Analyzing breed...');
       const detection = await detectBreed(selectedImage);
 
-      // Step 2: Get detailed breed info with AI (if online) or use basic info
-      let breedData: BreedData;
-      let aiBreedInfo = ''; // Declare outside to make it accessible later
-      
-      if (isOnline) {
-        try {
-          setUploadProgress(t('upload.fetchingDetails') || 'Fetching breed details...');
-          
-          // IMPORTANT: Use Vision API data directly if available (image-specific!)
-          // This ensures info matches the actual cow in the image
-          console.log('📊 Detection data:', {
-            hasCharacteristics: !!detection.characteristics,
-            hasCareTips: !!detection.careTips,
-            hasDescription: !!detection.description,
-          });
-          
-          // Only fetch generic breed info if Vision API didn't provide it
-          if (!detection.characteristics || !detection.careTips) {
-            console.log('⚠️ Vision API incomplete, fetching generic breed info');
-            aiBreedInfo = await getBreedInfo(detection.breedName, language);
-          } else {
-            console.log('✅ Using image-specific data from Vision API');
-          }
-          
-          // Parse AI response to extract characteristics and care tips
-          const parseBreedInfo = (text: string) => {
-            const characteristics: string[] = [];
-            const careTips: string[] = [];
-            
-            // Try to extract sections from the AI response
-            const lines = text.split('\n');
-            
-            let currentSection = '';
-            for (const line of lines) {
-              const trimmedLine = line.trim();
-              if (!trimmedLine) continue;
-              
-              // Detect section headers (multilingual) - includes numbered sections
-              if (trimmedLine.match(/\*\*\s*\d*\.?\s*(शारीरिक|Physical|Characteristics|विशेषताएं|Features)/i)) {
-                currentSection = 'characteristics';
-                console.log('📋 Found characteristics section');
-                continue;
-              } else if (trimmedLine.match(/\*\*\s*\d*\.?\s*(देखभाल|Care|Requirements|आवश्यकताएं|Feed|Health)/i)) {
-                currentSection = 'careTips';
-                console.log('💚 Found care tips section');
-                continue;
-              } else if (trimmedLine.match(/\*\*\s*\d*\.?\s*(दूध|Milk|Production|उत्पादन)/i)) {
-                currentSection = 'characteristics'; // Milk production as characteristic
-                continue;
-              } else if (trimmedLine.match(/\*\*\s*\d*\.?\s*(उपयुक्त|Suitable|Climate|जलवायु|Origin|उत्पत्ति)/i)) {
-                currentSection = 'characteristics'; // Climate/origin info as characteristic
-                continue;
-              }
-              
-              // Extract bullet points - Handle various formats
-              // Format 1: - Point text
-              if (trimmedLine.startsWith('-') && !trimmedLine.startsWith('--')) {
-                const cleanedLine = trimmedLine.substring(1).trim();
-                if (cleanedLine && cleanedLine.length > 5) {
-                  if (currentSection === 'characteristics') {
-                    characteristics.push(cleanedLine);
-                  } else if (currentSection === 'careTips') {
-                    careTips.push(cleanedLine);
-                  }
-                }
-                continue;
-              }
-              
-              // Format 2: * Point text or bullet
-              if (trimmedLine.match(/^[\*•]/)) {
-                const cleanedLine = trimmedLine.replace(/^[\*•]+\s*/, '').replace(/\*\*/g, '').trim();
-                if (cleanedLine && cleanedLine.length > 5) {
-                  if (currentSection === 'characteristics') {
-                    characteristics.push(cleanedLine);
-                  } else if (currentSection === 'careTips') {
-                    careTips.push(cleanedLine);
-                  }
-                }
-                continue;
-              }
-              
-              // Format 3: numbered items (1. , 2. , etc)
-              if (trimmedLine.match(/^\d+[\.\)]\s/)) {
-                const cleanedLine = trimmedLine.replace(/^\d+[\.\)]\s*/, '').trim();
-                if (cleanedLine && cleanedLine.length > 5) {
-                  if (currentSection === 'characteristics') {
-                    characteristics.push(cleanedLine);
-                  } else if (currentSection === 'careTips') {
-                    careTips.push(cleanedLine);
-                  }
-                }
-              }
-            }
-            
-            console.log(`✅ Parsed ${characteristics.length} characteristics, ${careTips.length} care tips`);
-            return { characteristics, careTips };
-          };
-          
-          // Parse generic breed info if we fetched it
-          const parsed = aiBreedInfo ? parseBreedInfo(aiBreedInfo) : { characteristics: [], careTips: [] };
-          
-          // Prepare default fallbacks
-          const getDefaultCharacteristics = () => {
-            if (language === 'hi') {
-              return [
-                'विशिष्ट शारीरिक विशेषताएं',
-                'अच्छी दूध उत्पादन क्षमता',
-                'रोग प्रतिरोधक क्षमता',
-                'स्थानीय जलवायु के अनुकूल',
-              ];
-            }
-            return [
-              'Distinctive physical features',
-              'Good milk production capacity',
-              'Disease resistance',
-              'Adapted to local climate',
-            ];
-          };
-          
-          const getDefaultCareTips = () => {
-            if (language === 'hi') {
-              return [
-                'प्रतिदिन स्वच्छ पानी प्रदान करें',
-                'संतुलित आहार और हरा चारा दें',
-                'नियमित टीकाकरण करवाएं',
-                'स्वच्छ आवास की व्यवस्था करें',
-              ];
-            }
-            return [
-              'Provide clean water daily',
-              'Feed balanced diet with green fodder',
-              'Regular vaccinations required',
-              'Maintain clean shelter',
-            ];
-          };
-          
-          // Prioritize Vision API data (image-specific), fallback to generic/defaults
-          const finalCharacteristics = 
-            detection.characteristics && detection.characteristics.length > 0 
-              ? detection.characteristics
-              : parsed.characteristics.length > 0 
-                ? parsed.characteristics 
-                : getDefaultCharacteristics();
-                
-          const finalCareTips = 
-            detection.careTips && detection.careTips.length > 0
-              ? detection.careTips
-              : parsed.careTips.length > 0
-                ? parsed.careTips
-                : getDefaultCareTips();
-                
-          const finalDescription = 
-            detection.description || aiBreedInfo || `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence`;
-          
-          breedData = {
-            breedName: detection.breedName,
-            description: finalDescription,
-            characteristics: finalCharacteristics,
-            careTips: finalCareTips,
-          };
-          
-          console.log('📦 Final breedData:', {
-            breed: breedData.breedName,
-            chars: breedData.characteristics.length,
-            tips: breedData.careTips.length,
-            source: detection.characteristics ? '✨ IMAGE-SPECIFIC (Vision API)' : parsed.characteristics.length > 0 ? '📚 Generic (Breed Info)' : '🔧 Defaults',
-          });
-        } catch (aiError) {
-          console.warn('AI breed info failed, using detection data or basic info:', aiError);
-          // Fallback to detection data or basic info
-          breedData = {
-            breedName: detection.breedName,
-            description: detection.description || `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence`,
-            characteristics: detection.characteristics || [
-              'Physical characteristics identified by AI model',
-              'Breed-specific features detected',
-            ],
-            careTips: detection.careTips || [
-              'Provide clean water daily',
-              'Feed balanced diet with minerals',
-              'Regular veterinary checkups',
-            ],
-          };
-        }
-      } else {
-        // Offline: Use basic info (will be translated if cached)
-        breedData = {
-          breedName: detection.breedName,
-          description: `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence. Connect to internet for detailed information.`,
-          characteristics: [
-            'Physical characteristics identified by AI model',
-            'Breed-specific features detected',
-          ],
-          careTips: [
-            'Provide clean water daily',
-            'Feed balanced diet with minerals',
-            'Regular veterinary checkups',
-          ],
-        };
-      }
-
-      // Step 3: Skip translation - Gemini already responded in user's language
-      // The getBreedInfo already got data in the requested language
-      console.log('⚡ Skipping translation - already in correct language');
+      // Offline: Use basic info (will be translated if cached)
+      const breedData: BreedData = {
+        breedName: detection.breedName,
+        description: `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence. Connect to internet for detailed information.`,
+        characteristics: [
+          'Physical characteristics identified by AI model',
+          'Breed-specific features detected',
+        ],
+        careTips: [
+          'Provide clean water daily',
+          'Feed balanced diet with minerals',
+          'Regular veterinary checkups',
+        ],
+      };
 
       const analysisResult = {
         breedName: breedData.breedName,
@@ -360,78 +182,44 @@ export default function UploadScreen(): React.JSX.Element {
 
       setDetectionResult(breedData);
 
-      if (isOnline) {
-        // ONLINE MODE: Upload to Firebase
-        setUploadProgress('Uploading to cloud...');
-        const imageUrl = await uploadImage(user.uid, selectedImage, 'cattle_photos');
-        
-        setUploadProgress('Saving result...');
-        await saveResult(user.uid, {
-          ...analysisResult,
-          imageUrl: imageUrl,
-        });
+      // ALWAYS Save locally first
+      setUploadProgress('Saving result...');
 
-        // Store result for display on result screen
-        await AsyncStorage.setItem('latestResult', JSON.stringify({
-          breedName: analysisResult.breedName,
-          confidence: analysisResult.confidence,
-          imageUrl: imageUrl,
-          characteristics: analysisResult.characteristics,
-          careTips: analysisResult.careTips,
-          description: breedData.description || aiBreedInfo || `${analysisResult.breedName} cattle breed`,
-        }));
+      // Save image to local storage
+      const localImagePath = await saveImageLocally(selectedImage, String(user.id));
 
-        // Navigate directly to result screen
-        console.log('✅ Analysis complete, navigating to results...');
-        router.push('/result' as any);
-      } else {
-        // OFFLINE MODE: Save locally
-        setUploadProgress('Saving offline...');
-        
-        // Save image to local storage
-        const localImagePath = await saveImageLocally(selectedImage, user.uid);
-        
-        // Create offline result
-        const offlineResult = {
-          id: `offline_${Date.now()}`,
-          userId: user.uid,
-          breedName: analysisResult.breedName,
-          confidence: analysisResult.confidence,
-          imageUri: localImagePath,
-          characteristics: analysisResult.characteristics,
-          careTips: analysisResult.careTips,
-          timestamp: new Date().toISOString(),
-          synced: false,
-        };
-        
-        // Save result offline
-        await saveResultOffline(offlineResult);
-        
-        // Add to pending upload queue
-        await addToPendingQueue({
-          id: offlineResult.id,
-          userId: user.uid,
-          imageUri: localImagePath,
-          result: offlineResult,
-          timestamp: new Date().toISOString(),
-        });
-        
-        await refreshPendingCount();
+      // Create result object
+      const resultId = `result_${Date.now()}`;
+      const resultObj = {
+        id: resultId,
+        userId: String(user.id),
+        breedName: analysisResult.breedName,
+        confidence: analysisResult.confidence,
+        imageUri: localImagePath,
+        characteristics: analysisResult.characteristics,
+        careTips: analysisResult.careTips,
+        timestamp: new Date().toISOString(),
+        synced: false,
+      };
 
-        // Store result for display on result screen
-        await AsyncStorage.setItem('latestResult', JSON.stringify({
-          breedName: analysisResult.breedName,
-          confidence: analysisResult.confidence,
-          imageUrl: localImagePath,
-          characteristics: analysisResult.characteristics,
-          careTips: analysisResult.careTips,
-          description: breedData.description || `${analysisResult.breedName} cattle breed detected offline`,
-        }));
+      // Save result offline
+      await saveResultOffline(resultObj);
 
-        // Navigate directly to result screen (offline mode)
-        console.log('✅ Analysis complete (offline), navigating to results...');
-        router.push('/result' as any);
-      }
+      await refreshPendingCount();
+
+      // Store result for display on result screen
+      await AsyncStorage.setItem('latestResult', JSON.stringify({
+        breedName: analysisResult.breedName,
+        confidence: analysisResult.confidence,
+        imageUrl: localImagePath,
+        characteristics: analysisResult.characteristics,
+        careTips: analysisResult.careTips,
+        description: breedData.description || `${analysisResult.breedName} cattle breed detected`,
+      }));
+
+      // Navigate directly to result screen
+      console.log('✅ Analysis complete, navigating to results...');
+      router.push('/result' as any);
 
       setSelectedImage(null);
     } catch (error: any) {
