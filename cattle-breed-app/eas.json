@@ -14,7 +14,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://192.168.1.6:3000",
+        "EXPO_PUBLIC_API_URL": "https://cattle-breed-identification-sih-2025.onrender.com",
         "EXPO_PUBLIC_GEMINI_API_KEY": "AIzaSyAlXKS5mGnZw_QC4loPPPodULr0RnehO8U"
       }
     }
