@@ -49,7 +49,7 @@ const register = async (req, res) => {
 
     // Check if user exists
     const [existingUsers] = await promisePool.query(
-      'SELECT id FROM workers WHERE email = ?',
+      'SELECT id FROM workers WHERE email = $1',
       [email]
     );
 
@@ -65,15 +65,16 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Insert user
+    // Postgres uses RETURNING to get the inserted row/id
     const [result] = await promisePool.query(
-      'INSERT INTO workers (email, password, name, phone, address) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO workers (email, password, name, phone, address) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [email, hashedPassword, name || null, phone || null, address || null]
     );
 
     // Get created user
     const [users] = await promisePool.query(
-      'SELECT id, email, name, phone, address, role, created_at FROM workers WHERE id = ?',
-      [result.insertId]
+      'SELECT id, email, name, phone, address, role, created_at FROM workers WHERE id = $1',
+      [result[0].id]
     );
 
     const user = users[0];
@@ -122,7 +123,7 @@ const login = async (req, res) => {
 
     // Get user from database
     const [users] = await promisePool.query(
-      'SELECT * FROM workers WHERE email = ?',
+      'SELECT * FROM workers WHERE email = $1',
       [email]
     );
 
@@ -178,7 +179,7 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const [users] = await promisePool.query(
-      'SELECT id, email, name, phone, address, role, created_at FROM workers WHERE id = ?',
+      'SELECT id, email, name, phone, address, role, created_at FROM workers WHERE id = $1',
       [req.user.id]
     );
 
@@ -215,18 +216,22 @@ const updateProfile = async (req, res) => {
     // Build update query dynamically
     const updates = [];
     const values = [];
+    let paramIndex = 1;
 
     if (name !== undefined) {
-      updates.push('name = ?');
+      updates.push(`name = $${paramIndex}`);
       values.push(name);
+      paramIndex++;
     }
     if (phone !== undefined) {
-      updates.push('phone = ?');
+      updates.push(`phone = $${paramIndex}`);
       values.push(phone);
+      paramIndex++;
     }
     if (address !== undefined) {
-      updates.push('address = ?');
+      updates.push(`address = $${paramIndex}`);
       values.push(address);
+      paramIndex++;
     }
 
     if (updates.length === 0) {
@@ -239,13 +244,13 @@ const updateProfile = async (req, res) => {
     values.push(userId);
 
     await promisePool.query(
-      `UPDATE workers SET ${updates.join(', ')} WHERE id = ?`,
+      `UPDATE workers SET ${updates.join(', ')} WHERE id = $${paramIndex}`,
       values
     );
 
     // Get updated user
     const [users] = await promisePool.query(
-      'SELECT id, email, name, phone, address, role FROM workers WHERE id = ?',
+      'SELECT id, email, name, phone, address, role FROM workers WHERE id = $1',
       [userId]
     );
 
