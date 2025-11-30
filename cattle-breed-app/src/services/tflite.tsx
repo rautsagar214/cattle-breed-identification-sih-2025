@@ -118,7 +118,7 @@ const imageToTensor = async (uri: string): Promise<Float32Array> => {
     // 1. Resize image to 224x224
     const manipResult = await manipulateAsync(
       uri,
-      [{ resize: { width: 224, height: 224 } }],
+      [{ resize: { width: 300, height: 300 } }],
       { format: SaveFormat.JPEG, base64: true }
     );
 
@@ -142,14 +142,14 @@ const imageToTensor = async (uri: string): Promise<Float32Array> => {
 
     // 3. Normalize to Float32Array (0-1)
     const { data } = rawImageData;
-    const float32Data = new Float32Array(224 * 224 * 3);
+    const float32Data = new Float32Array(300 * 300 * 3);
 
     let offset = 0;
     for (let i = 0; i < data.length; i += 4) {
       // RGB only, ignore Alpha
-      float32Data[offset++] = data[i] / 255.0;     // R
-      float32Data[offset++] = data[i + 1] / 255.0; // G
-      float32Data[offset++] = data[i + 2] / 255.0; // B
+      float32Data[offset++] = data[i];     // R
+      float32Data[offset++] = data[i + 1]; // G
+      float32Data[offset++] = data[i + 2]; // B
     }
 
     console.log('✅ Image preprocessed to tensor');
@@ -240,7 +240,7 @@ export const getModelInfo = (): ModelInfo => {
   return {
     name: 'Cattle Breed Classifier',
     version: '1.0.0',
-    inputSize: [224, 224, 3],
+    inputSize: [300, 300, 3],
     numClasses: CATTLE_BREEDS.length,
     breeds: CATTLE_BREEDS,
     accuracy: 0.95,

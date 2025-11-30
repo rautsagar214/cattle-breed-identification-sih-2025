@@ -16,6 +16,7 @@ import { registerUser } from '../src/services/authService';
 import { validateEmail, validatePassword } from '../src/utils/security';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { useAuth } from '../src/contexts/AuthContext';
+import { ServiceHealthIndicator } from '../src/components/ServiceHealthIndicator';
 
 export default function SignupScreen(): React.JSX.Element {
   const router = useRouter();
@@ -77,10 +78,10 @@ export default function SignupScreen(): React.JSX.Element {
       console.log('🔐 Signing up:', emailToUse);
       const user = await registerUser(emailToUse, passwordToUse, nameToUse);
       console.log('✅ Success! User ID:', user.id);
-      
+
       // Update auth context
       setUser(user);
-      
+
       // Navigate to home
       setTimeout(() => {
         console.log('🚀 Navigating to home...');
@@ -117,6 +118,9 @@ export default function SignupScreen(): React.JSX.Element {
           <Text style={styles.headerTitle}>{t('auth.getStarted')}</Text>
           <Text style={styles.headerSubtitle}>{t('auth.signupSubtitle')}</Text>
         </View>
+
+        {/* Service Health Indicator */}
+        <ServiceHealthIndicator />
 
         {/* Signup Form */}
         <View style={styles.form}>

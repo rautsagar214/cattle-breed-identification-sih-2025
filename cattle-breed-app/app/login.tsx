@@ -16,6 +16,7 @@ import { loginUser } from '../src/services/authService';
 import { validateEmail, RateLimiter } from '../src/utils/security';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { useAuth } from '../src/contexts/AuthContext';
+import { ServiceHealthIndicator } from '../src/components/ServiceHealthIndicator';
 
 // Rate limiter for login attempts
 const loginLimiter = new RateLimiter();
@@ -60,10 +61,10 @@ export default function LoginScreen(): React.JSX.Element {
       console.log('🔐 Attempting login...');
       const user = await loginUser(trimmedEmail, trimmedPassword);
       console.log('✅ Login successful!', user.id);
-      
+
       // Update auth context
       setUser(user);
-      
+
       // Navigate to home
       setTimeout(() => {
         console.log('🚀 Navigating to home...');
@@ -100,6 +101,9 @@ export default function LoginScreen(): React.JSX.Element {
           <Text style={styles.headerTitle}>{t('auth.welcomeBack')}</Text>
           <Text style={styles.headerSubtitle}>{t('auth.signInSubtitle')}</Text>
         </View>
+
+        {/* Service Health Indicator */}
+        <ServiceHealthIndicator />
 
         {/* Login Form */}
         <View style={styles.form}>
