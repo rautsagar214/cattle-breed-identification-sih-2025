@@ -3,6 +3,7 @@
   "compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
+    "module": "esnext",
     "strict": true,
     "jsx": "react-native",
     "paths": {

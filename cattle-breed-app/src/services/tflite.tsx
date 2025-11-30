@@ -4,6 +4,8 @@
 
 import { Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import * as jpeg from 'jpeg-js';
 
 declare global {
   // Cache for model instance
@@ -101,6 +103,61 @@ export const initializeModel = async (): Promise<any> => {
     globalThis.__TFLITE_BACKEND__ = 'mock';
     return null;
   }
+  return null;
+};
+
+
+
+/**
+ * Convert image URI to Float32Array tensor (224x224x3)
+ */
+const imageToTensor = async (uri: string): Promise<Float32Array> => {
+  try {
+    console.log('🔄 Preprocessing image...');
+
+    // 1. Resize image to 224x224
+    const manipResult = await manipulateAsync(
+      uri,
+      [{ resize: { width: 224, height: 224 } }],
+      { format: SaveFormat.JPEG, base64: true }
+    );
+
+    if (!manipResult.base64) {
+      throw new Error('Failed to get image base64 data');
+    }
+
+    // 2. Decode JPEG to raw RGB
+    // jpeg-js expects a Buffer-like object. In RN, we can pass the base64 string directly 
+    // if we convert it to a buffer, but jpeg-js decode accepts a buffer.
+    // However, jpeg-js pure JS implementation might need a Uint8Array.
+    // Let's convert base64 to Uint8Array.
+    const binaryString = atob(manipResult.base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const rawImageData = jpeg.decode(bytes, { useTArray: true });
+
+    // 3. Normalize to Float32Array (0-1)
+    const { data } = rawImageData;
+    const float32Data = new Float32Array(224 * 224 * 3);
+
+    let offset = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      // RGB only, ignore Alpha
+      float32Data[offset++] = data[i] / 255.0;     // R
+      float32Data[offset++] = data[i + 1] / 255.0; // G
+      float32Data[offset++] = data[i + 2] / 255.0; // B
+    }
+
+    console.log('✅ Image preprocessed to tensor');
+    return float32Data;
+  } catch (error) {
+    console.error('❌ Error preprocessing image:', error);
+    throw error;
+  }
 };
 
 /**
@@ -142,8 +199,11 @@ export const detectBreed = async (imageUri: string): Promise<DetectionResult> =>
       try {
         const model = globalThis.__TFLITE_MODEL__;
 
+        // Preprocess image to tensor
+        const inputTensor = await imageToTensor(imageUri);
+
         // Run inference with native TFLite
-        const outputs = await model.run([imageUri]);
+        const outputs = await model.run([inputTensor]);
         const probabilities = outputs[0]; // Assuming single output tensor
 
         // Get top predictions
