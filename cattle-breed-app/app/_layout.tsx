@@ -4,10 +4,12 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { useEffect } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { AuthProvider } from '../src/contexts/AuthContext';
+import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { NetworkProvider } from '../src/contexts/NetworkContext';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
+import { useRouter, useSegments } from 'expo-router';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -15,6 +17,24 @@ export const unstable_settings = {
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
+  const { user, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inTabsGroup = segments[0] === '(tabs)';
+    const inAuthGroup = segments[0] === 'login' || segments[0] === 'signup' || segments[0] === 'index';
+
+    if (user && inAuthGroup) {
+      // Redirect to the tabs group if the user is signed in and trying to access auth screens
+      router.replace('/(tabs)');
+    } else if (!user && inTabsGroup) {
+      // Redirect to the login page if the user is not signed in and trying to access tabs
+      router.replace('/login');
+    }
+  }, [user, loading, segments]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

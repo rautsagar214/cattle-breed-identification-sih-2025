@@ -27,6 +27,12 @@ export interface User {
   phone?: string;
   role?: string;
   created_at?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  bio?: string;
+  avatar_url?: string;
 }
 
 // API response interfaces
@@ -130,12 +136,26 @@ export const loginUser = async (
 
     const { user, token } = response.data.data;
 
-    // Store token and user data
+    // Store token
     await AsyncStorage.setItem(TOKEN_KEY, token);
-    await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
 
-    console.log('✅ User logged in successfully:', user.email);
-    return user;
+    // Fetch full user profile to ensure we have all details
+    // Sometimes login response might be partial
+    let fullUser = user;
+    try {
+      const profileResponse = await api.get<UserResponse>('/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fullUser = profileResponse.data.data.user;
+    } catch (profileError) {
+      console.warn('⚠️ Could not fetch full profile, using login data', profileError);
+    }
+
+    // Store user data
+    await AsyncStorage.setItem(USER_KEY, JSON.stringify(fullUser));
+
+    console.log('✅ User logged in successfully:', fullUser.email);
+    return fullUser;
   } catch (error: any) {
     console.error('❌ Login error:', error.response?.data || error.message);
     throw new Error(

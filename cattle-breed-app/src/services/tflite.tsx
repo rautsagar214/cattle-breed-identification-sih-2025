@@ -204,7 +204,18 @@ export const detectBreed = async (imageUri: string): Promise<DetectionResult> =>
 
         // Run inference with native TFLite
         const outputs = await model.run([inputTensor]);
-        const probabilities = outputs[0]; // Assuming single output tensor
+        const rawLogits = outputs[0];
+
+        // Apply Softmax to convert logits to probabilities
+        const softmax = (logits: any): number[] => {
+          const arr = Array.from(logits) as number[];
+          const maxLogit = Math.max(...arr);
+          const exps = arr.map(l => Math.exp(l - maxLogit));
+          const sumExps = exps.reduce((a, b) => a + b, 0);
+          return exps.map(e => e / sumExps);
+        };
+
+        const probabilities = softmax(rawLogits);
 
         // Get top predictions
         const allPredictions: BreedPrediction[] = CATTLE_BREEDS.map((breed, index) => ({
