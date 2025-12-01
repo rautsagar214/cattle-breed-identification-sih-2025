@@ -13,8 +13,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
   isAuthenticated: false,
-  refreshUser: async () => {},
-  setUser: () => {},
+  refreshUser: async () => { },
+  setUser: () => { },
 });
 
 export const useAuth = () => {
@@ -46,18 +46,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         // First, try to get stored user (faster)
         const storedUser = await getStoredUser();
-        
+
         if (storedUser) {
           setUser(storedUser);
-          
-          // Then validate token in background
-          const currentUser = await getCurrentUser();
-          if (currentUser) {
-            setUser(currentUser);
-          } else {
-            // Token invalid, clear user
-            setUser(null);
-          }
+          console.log('✅ Restored user session:', storedUser.phone || storedUser.email);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);

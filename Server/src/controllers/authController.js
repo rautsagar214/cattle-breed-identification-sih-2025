@@ -1,6 +1,7 @@
 const { promisePool } = require('../config/database');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
 // Generate JWT Token
 const generateToken = (user) => {
@@ -173,6 +174,79 @@ const login = async (req, res) => {
   }
 };
 
+// @route   POST /api/auth/admin-login
+// @desc    Admin Login
+// @access  Public
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    // Get user from database
+    const [users] = await promisePool.query(
+      'SELECT * FROM workers WHERE email = $1',
+      [email]
+    );
+
+    if (users.length === 0) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    const user = users[0];
+
+    // Check if user is ADMIN
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin only.'
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+
+    // Generate token
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: 'Admin login successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        },
+        token
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during admin login'
+    });
+  }
+};
+
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
@@ -270,9 +344,177 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// Mock OTP Store (In-memory for demo)
+const otpStore = {};
+
+// @route   POST /api/auth/send-otp
+// @desc    Send OTP to phone number
+// @access  Public
+const sendOtp = async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number is required'
+      });
+    }
+
+    // Generate 4-digit OTP
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    // Store OTP with expiration (5 minutes)
+    otpStore[phone] = {
+      otp,
+      expires: Date.now() + 5 * 60 * 1000
+    };
+
+    // Fast2SMS Integration
+    const message = `${otp} is your otp to login at A6`;
+
+    if (process.env.FAST2SMS_API_KEY) {
+      try {
+        const response = await axios.post('https://www.fast2sms.com/dev/bulkV2', {
+          "route": "q",
+          "message": message,
+          "language": "english",
+          "flash": 0,
+          "numbers": phone,
+        }, {
+          headers: {
+            "authorization": process.env.FAST2SMS_API_KEY,
+            "Content-Type": "application/json"
+          }
+        });
+        console.log('Fast2SMS Response:', response.data);
+      } catch (smsError) {
+        console.error('Fast2SMS Error:', smsError.response ? smsError.response.data : smsError.message);
+        // Fallback to console log for dev/debugging if SMS fails
+        console.log(`📱 [MOCK SMS FALLBACK] OTP for ${phone}: ${otp}`);
+      }
+    } else {
+      console.log(`📱 [MOCK SMS] OTP for ${phone}: ${otp} (FAST2SMS_API_KEY not set)`);
+    }
+
+    res.json({
+      success: true,
+      message: 'OTP sent successfully'
+    });
+  } catch (error) {
+    console.error('Send OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error sending OTP'
+    });
+  }
+};
+
+// @route   POST /api/auth/verify-otp
+// @desc    Verify OTP and login/register user
+// @access  Public
+const verifyOtp = async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+
+    if (!phone || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number and OTP are required'
+      });
+    }
+
+    // Verify OTP
+    const storedData = otpStore[phone];
+    if (!storedData) {
+      return res.status(400).json({
+        success: false,
+        message: 'OTP expired or not sent'
+      });
+    }
+
+    if (storedData.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid OTP'
+      });
+    }
+
+    if (Date.now() > storedData.expires) {
+      delete otpStore[phone];
+      return res.status(400).json({
+        success: false,
+        message: 'OTP expired'
+      });
+    }
+
+    // OTP Valid - Clear it
+    delete otpStore[phone];
+
+    // Check if user exists
+    const [users] = await promisePool.query(
+      'SELECT * FROM workers WHERE phone = $1',
+      [phone]
+    );
+
+    let user;
+
+    if (users.length > 0) {
+      // Existing user
+      user = users[0];
+    } else {
+      // New user - Register
+      // Generate a dummy email/password since schema might require it (or we make them nullable/dummy)
+      // For now, assuming we can insert with just phone or dummy data
+      const dummyEmail = `${phone}@mobile.user`;
+      const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10); // Random password
+
+      const [result] = await promisePool.query(
+        'INSERT INTO workers (phone, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id',
+        [phone, dummyEmail, dummyPassword, 'user']
+      );
+
+      const [newUsers] = await promisePool.query(
+        'SELECT * FROM workers WHERE id = $1',
+        [result[0].id]
+      );
+      user = newUsers[0];
+    }
+
+    // Generate token
+    const token = generateToken(user);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          phone: user.phone,
+          address: user.address,
+          role: user.role
+        },
+        token
+      }
+    });
+
+  } catch (error) {
+    console.error('Verify OTP error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error verifying OTP'
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
+  adminLogin,
   getMe,
-  updateProfile
+  updateProfile,
+  sendOtp,
+  verifyOtp
 };

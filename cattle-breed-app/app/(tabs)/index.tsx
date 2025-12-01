@@ -19,7 +19,7 @@ export default function HomeScreen(): React.JSX.Element {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      
+
       {/* Modern Header */}
       <View style={styles.header}>
         <View>
@@ -59,17 +59,7 @@ export default function HomeScreen(): React.JSX.Element {
 
         {/* Quick Actions Grid */}
         <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => router.push('/chatbot' as any)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.actionIconContainer}>
-              <Text style={styles.actionEmoji}>🤖</Text>
-            </View>
-            <Text style={styles.actionTitle}>{t('home.aiAssistant')}</Text>
-            <Text style={styles.actionDesc}>{t('home.aiAssistantDesc')}</Text>
-          </TouchableOpacity>
+
 
           <TouchableOpacity
             style={styles.actionCard}
@@ -101,12 +91,12 @@ export default function HomeScreen(): React.JSX.Element {
         <View style={styles.breedsSection}>
           <Text style={styles.sectionTitle}>{t('home.popularBreeds')}</Text>
           <View style={styles.breedTags}>
-            {['Gir', 'Sahiwal', 'Red Sindhi', 'Tharparkar', 'Rathi', 'Kankrej', 
+            {['Gir', 'Sahiwal', 'Red Sindhi', 'Tharparkar', 'Rathi', 'Kankrej',
               'Ongole', 'Hariana', 'Kangayam', 'Hallikar', 'Khillari', 'Deoni'].map((breed, index) => (
-              <View key={index} style={styles.breedTag}>
-                <Text style={styles.breedTagText}>{breed}</Text>
-              </View>
-            ))}
+                <View key={index} style={styles.breedTag}>
+                  <Text style={styles.breedTagText}>{breed}</Text>
+                </View>
+              ))}
           </View>
         </View>
       </ScrollView>

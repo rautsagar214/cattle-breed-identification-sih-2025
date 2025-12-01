@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "cattle-breed-app",
+    "name": "A6",
     "slug": "cattle-breed-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/a6logo.jpg",
     "scheme": "cattlebreedapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

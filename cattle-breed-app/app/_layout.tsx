@@ -10,6 +10,7 @@ import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { NetworkProvider } from '../src/contexts/NetworkContext';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
 import { useRouter, useSegments } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -20,6 +21,16 @@ function RootLayoutContent() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    // Request permissions on app start
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        console.log('Media library permission denied on start');
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -41,7 +52,7 @@ function RootLayoutContent() {
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false, title: 'Welcome' }} />
         <Stack.Screen name="login" options={{ headerShown: false, title: 'Login' }} />
-        <Stack.Screen name="signup" options={{ headerShown: false, title: 'Sign Up' }} />
+
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="upload" options={{ headerShown: false, title: 'Upload Image' }} />
         <Stack.Screen name="chatbot" options={{ headerShown: false, title: 'AI Assistant' }} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,71 +10,89 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { loginUser } from '../src/services/authService';
-import { validateEmail, RateLimiter } from '../src/utils/security';
+import { sendOtp, verifyOtp } from '../src/services/authService';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { useAuth } from '../src/contexts/AuthContext';
 import { ServiceHealthIndicator } from '../src/components/ServiceHealthIndicator';
 
-// Rate limiter for login attempts
-const loginLimiter = new RateLimiter();
-
 export default function LoginScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useLanguage();
-  const { setUser, refreshUser } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { setUser } = useAuth();
+
+  const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
 
-  const handleLogin = async () => {
-    console.log('🔘 Login button pressed');
-    if (!email || !password) {
-      console.log('⚠️ Empty fields detected');
-      Alert.alert('Error', 'Please enter both email and password');
-      return;
+  const otpInputs = useRef<Array<TextInput | null>>([]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
     }
+    return () => clearInterval(interval);
+  }, [timer]);
 
-    // Trim whitespace
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
-
-    // Validate email format
-    if (!validateEmail(trimmedEmail)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
-      return;
-    }
-
-    // Check rate limiting (5 attempts per minute)
-    if (!loginLimiter.isAllowed(`login:${trimmedEmail}`, 5, 60000)) {
-      Alert.alert(
-        'Too Many Attempts',
-        'You have exceeded the maximum login attempts. Please wait 1 minute before trying again.'
-      );
+  const handleSendOtp = async () => {
+    if (!phone || phone.length !== 10) {
+      Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
       return;
     }
 
     setLoading(true);
     try {
-      console.log('🔐 Attempting login...');
-      const user = await loginUser(trimmedEmail, trimmedPassword);
-      console.log('✅ Login successful!', user.id);
-
-      // Update auth context
-      setUser(user);
-
-      // Navigate to home
-      setTimeout(() => {
-        console.log('🚀 Navigating to home...');
-        router.replace('/(tabs)');
-      }, 100);
+      await sendOtp(phone);
+      setStep('OTP');
+      setTimer(30); // 30 seconds cooldown
+      Alert.alert('OTP Sent', 'Please check your messages for the verification code.');
     } catch (error: any) {
-      console.error('❌ Login failed:', error);
-      Alert.alert('Login Failed', error.message || 'Please check your credentials and try again');
+      Alert.alert('Error', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    const otpString = otp.join('');
+    if (otpString.length !== 4) {
+      Alert.alert('Invalid OTP', 'Please enter the 4-digit code');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await verifyOtp(phone, otpString);
+      setUser(user);
+      router.replace('/(tabs)');
+    } catch (error: any) {
+      Alert.alert('Verification Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (text: string, index: number) => {
+    const newOtp = [...otp];
+    newOtp[index] = text;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (text && index < 3) {
+      otpInputs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      otpInputs.current[index - 1]?.focus();
     }
   };
 
@@ -89,87 +107,115 @@ export default function LoginScreen(): React.JSX.Element {
         showsVerticalScrollIndicator={false}
       >
         {/* Back Button */}
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>← {t('common.back')}</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => {
+          if (step === 'OTP') {
+            setStep('PHONE');
+            setOtp(['', '', '', '']);
+          } else {
+            router.back();
+          }
+        }}>
+          <Text style={styles.backBtnText}>← {step === 'OTP' ? 'Change Number' : t('common.back')}</Text>
         </TouchableOpacity>
 
         {/* Header */}
         <View style={styles.header}>
+
           <View style={styles.iconBadge}>
-            <Text style={styles.headerIcon}>🐄</Text>
-          </View>
-          <Text style={styles.headerTitle}>{t('auth.welcomeBack')}</Text>
-          <Text style={styles.headerSubtitle}>{t('auth.signInSubtitle')}</Text>
-        </View>
-
-        {/* Service Health Indicator */}
-        <ServiceHealthIndicator />
-
-        {/* Login Form */}
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('auth.email')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('auth.email')}
-              placeholderTextColor="#9ca3af"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
+            <Image
+              source={require('../assets/images/a6logo.jpg')}
+              style={styles.logoImage}
+              resizeMode="cover"
             />
           </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('auth.password')}</Text>
-            <View>
-              <TextInput
-                style={styles.input}
-                placeholder={t('auth.password')}
-                placeholderTextColor="#9ca3af"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoCapitalize="none"
-                autoComplete="current-password"
-                textContentType="password"
-                editable={!loading}
-              />
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={styles.forgotBtn}
-            onPress={() => Alert.alert(t('auth.forgotPassword'), 'Feature coming soon!')}
-          >
-            <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.8}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" size="small" />
-            ) : (
-              <>
-                <Text style={styles.loginBtnText}>{t('auth.login')}</Text>
-                <Text style={styles.loginArrow}>→</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {step === 'PHONE' ? 'Welcome' : 'Verification'}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            {step === 'PHONE'
+              ? 'Enter your mobile number to continue'
+              : `Enter the 4-digit code sent to +91 ${phone}`
+            }
+          </Text>
         </View>
 
-        {/* Sign Up Link */}
-        <View style={styles.signupContainer}>
-          <Text style={styles.signupText}>{t('auth.noAccount')} </Text>
-          <TouchableOpacity onPress={() => router.push('/signup' as any)}>
-            <Text style={styles.signupLink}>{t('auth.signup')}</Text>
-          </TouchableOpacity>
+        <ServiceHealthIndicator />
+
+        <View style={styles.form}>
+          {step === 'PHONE' ? (
+            // Phone Input Step
+            <View>
+              <View style={styles.phoneInputContainer}>
+                <View style={styles.countryCode}>
+                  <Text style={styles.flag}>🇮🇳</Text>
+                  <Text style={styles.codeText}>+91</Text>
+                </View>
+                <TextInput
+                  style={styles.phoneInput}
+                  placeholder="Mobile Number"
+                  placeholderTextColor="#9ca3af"
+                  value={phone}
+                  onChangeText={(text) => setPhone(text.replace(/[^0-9]/g, '').slice(0, 10))}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                  editable={!loading}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryBtn, loading && styles.btnDisabled]}
+                onPress={handleSendOtp}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.btnText}>Get OTP</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // OTP Input Step
+            <View>
+              <View style={styles.otpContainer}>
+                {otp.map((digit, index) => (
+                  <TextInput
+                    key={index}
+                    ref={(ref) => (otpInputs.current[index] = ref)}
+                    style={styles.otpInput}
+                    value={digit}
+                    onChangeText={(text) => handleOtpChange(text, index)}
+                    onKeyPress={(e) => handleOtpKeyPress(e, index)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    editable={!loading}
+                  />
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.primaryBtn, loading && styles.btnDisabled]}
+                onPress={handleVerifyOtp}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={styles.btnText}>Verify & Login</Text>
+                )}
+              </TouchableOpacity>
+
+              <View style={styles.resendContainer}>
+                {timer > 0 ? (
+                  <Text style={styles.timerText}>Resend OTP in {timer}s</Text>
+                ) : (
+                  <TouchableOpacity onPress={handleSendOtp} disabled={loading}>
+                    <Text style={styles.resendLink}>Resend OTP</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -199,157 +245,136 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 48,
-    marginTop: 60,
+    marginBottom: 20,
+    marginTop: 20,
+  },
+  gifContainer: {
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  helloGif: {
+    width: 150,
+    height: 150,
   },
   iconBadge: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'white',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  headerIcon: {
-    fontSize: 48,
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 8,
-    letterSpacing: -0.5,
   },
   headerSubtitle: {
     fontSize: 16,
     color: '#6b7280',
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
   form: {
-    marginBottom: 32,
+    width: '100%',
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 10,
-  },
-  input: {
+  phoneInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 18,
-    fontSize: 16,
     borderWidth: 1,
     borderColor: '#e5e7eb',
-    color: '#1a1a1a',
+    marginBottom: 24,
+    overflow: 'hidden',
   },
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 28,
-  },
-  forgotPasswordText: {
-    color: '#667eea',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  forgotBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: 28,
-    marginTop: 4,
-  },
-  forgotText: {
-    color: '#667eea',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  loginButton: {
-    backgroundColor: '#667eea',
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  loginBtn: {
-    backgroundColor: '#667eea',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
+  countryCode: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    backgroundColor: '#f3f4f6',
+    borderRightWidth: 1,
+    borderRightColor: '#e5e7eb',
   },
-  loginButtonDisabled: {
-    opacity: 0.6,
-  },
-  loginBtnDisabled: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  loginBtnText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '700',
+  flag: {
+    fontSize: 20,
     marginRight: 8,
   },
-  loginArrow: {
-    color: 'white',
-    fontSize: 20,
+  codeText: {
+    fontSize: 16,
     fontWeight: '600',
+    color: '#374151',
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  dividerLine: {
+  phoneInput: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#dee2e6',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    fontSize: 18,
+    color: '#1a1a1a',
+    fontWeight: '500',
   },
-  dividerText: {
-    marginHorizontal: 15,
-    color: '#7f8c8d',
-    fontSize: 14,
-  },
-  signupContainer: {
+  otpContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+    paddingHorizontal: 20,
+  },
+  otpInput: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    backgroundColor: 'white',
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+  },
+  primaryBtn: {
+    backgroundColor: '#667eea',
+    borderRadius: 16,
+    paddingVertical: 18,
     alignItems: 'center',
+    shadowColor: '#667eea',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  signupText: {
-    fontSize: 15,
-    color: '#6b7280',
+  btnDisabled: {
+    opacity: 0.7,
+    backgroundColor: '#9ca3af',
   },
-  signupLink: {
-    fontSize: 15,
-    color: '#667eea',
+  btnText: {
+    color: 'white',
+    fontSize: 18,
     fontWeight: '700',
   },
-  backButton: {
-    alignSelf: 'center',
-    marginTop: 10,
+  resendContainer: {
+    marginTop: 24,
+    alignItems: 'center',
   },
-  backButtonText: {
-    color: '#7f8c8d',
+  timerText: {
+    color: '#9ca3af',
     fontSize: 14,
+  },
+  resendLink: {
+    color: '#667eea',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

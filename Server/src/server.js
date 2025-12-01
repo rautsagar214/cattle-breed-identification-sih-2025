@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const { testConnection } = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const workerRoutes = require('./routes/workerRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +46,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/workers', workerRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -124,14 +124,30 @@ export const registerUser = async (
 /**
  * Login user
  */
-export const loginUser = async (
-  email: string,
-  password: string
-): Promise<User> => {
+/**
+ * Send OTP to phone number
+ */
+export const sendOtp = async (phone: string): Promise<void> => {
   try {
-    const response = await api.post<AuthResponse>('/login', {
-      email,
-      password,
+    await api.post('/send-otp', { phone });
+    console.log('✅ OTP sent successfully to:', phone);
+  } catch (error: any) {
+    console.error('❌ Send OTP error:', error.response?.data || error.message);
+    throw new Error(
+      error.response?.data?.message ||
+      'Failed to send OTP. Please try again.'
+    );
+  }
+};
+
+/**
+ * Verify OTP and Login/Register
+ */
+export const verifyOtp = async (phone: string, otp: string): Promise<User> => {
+  try {
+    const response = await api.post<AuthResponse>('/verify-otp', {
+      phone,
+      otp,
     });
 
     const { user, token } = response.data.data;
@@ -140,7 +156,6 @@ export const loginUser = async (
     await AsyncStorage.setItem(TOKEN_KEY, token);
 
     // Fetch full user profile to ensure we have all details
-    // Sometimes login response might be partial
     let fullUser = user;
     try {
       const profileResponse = await api.get<UserResponse>('/me', {
@@ -154,13 +169,13 @@ export const loginUser = async (
     // Store user data
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(fullUser));
 
-    console.log('✅ User logged in successfully:', fullUser.email);
+    console.log('✅ User logged in successfully:', fullUser.phone);
     return fullUser;
   } catch (error: any) {
-    console.error('❌ Login error:', error.response?.data || error.message);
+    console.error('❌ Verify OTP error:', error.response?.data || error.message);
     throw new Error(
       error.response?.data?.message ||
-      'Login failed. Please check your credentials.'
+      'Invalid OTP. Please try again.'
     );
   }
 };

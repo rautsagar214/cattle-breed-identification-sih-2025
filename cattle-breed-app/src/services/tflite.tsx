@@ -180,17 +180,9 @@ export const detectBreed = async (imageUri: string): Promise<DetectionResult> =>
       };
     }
 
-    // 2. Check Network - Online
-    const netState = await NetInfo.fetch();
-    if (netState.isConnected && netState.isInternetReachable !== false) {
-      console.log('⚠️ Using TFLite model in online mode: Detection DISABLED.');
-      return {
-        breedName: 'Unknown (Online)',
-        confidence: 0,
-        allPredictions: [],
-        description: 'Online detection is currently disabled. Please use offline mode for TFLite detection.',
-      };
-    }
+    // 2. Check Network - Online check removed to allow TFLite usage online
+    // const netState = await NetInfo.fetch();
+    // if (netState.isConnected && netState.isInternetReachable !== false) { ... }
 
     // 3. Offline Mode - Run Native TFLite
     console.log('📱 Offline Mode: Running native TFLite inference...');

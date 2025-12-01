@@ -4,16 +4,15 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
   StatusBar,
-  Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguage } from '../src/contexts/LanguageContext';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen(): React.JSX.Element {
   const router = useRouter();
@@ -28,17 +27,18 @@ export default function WelcomeScreen(): React.JSX.Element {
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
           {/* Hero Section */}
           <View style={styles.heroSection}>
             <View style={styles.logoContainer}>
               <View style={styles.logoBadge}>
-                <Text style={styles.logoIcon}>🐄</Text>
+                <Image
+                  source={require('../assets/images/a6logo.jpg')}
+                  style={styles.logoImage}
+                  resizeMode="cover"
+                />
               </View>
-              <Text style={styles.appName}>CattleAI</Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{t('welcome.badge')}</Text>
-              </View>
+              <Text style={styles.appName}>A6</Text>
             </View>
 
             <View style={styles.heroTextContainer}>
@@ -49,35 +49,11 @@ export default function WelcomeScreen(): React.JSX.Element {
             </View>
           </View>
 
-          {/* Feature Grid */}
-          <View style={styles.featuresGrid}>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureEmoji}></Text>
-              <Text style={styles.featureTitle}>{t('welcome.features.aiScan')}</Text>
-              <Text style={styles.featureDesc}>{t('welcome.features.aiScanDesc')}</Text>
-            </View>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureEmoji}></Text>
-              <Text style={styles.featureTitle}>{t('welcome.features.expertAI')}</Text>
-              <Text style={styles.featureDesc}>{t('welcome.features.expertAIDesc')}</Text>
-            </View>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureEmoji}></Text>
-              <Text style={styles.featureTitle}>{t('welcome.features.offline')}</Text>
-              <Text style={styles.featureDesc}>{t('welcome.features.offlineDesc')}</Text>
-            </View>
-            <View style={styles.featureCard}>
-              <Text style={styles.featureEmoji}></Text>
-              <Text style={styles.featureTitle}>{t('welcome.features.multiLang')}</Text>
-              <Text style={styles.featureDesc}>{t('welcome.features.multiLangDesc')}</Text>
-            </View>
-          </View>
-
           {/* CTA Buttons */}
           <View style={styles.ctaContainer}>
             <TouchableOpacity
               style={styles.primaryCTA}
-              onPress={() => router.push('/signup' as any)}
+              onPress={() => router.push('/login' as any)}
               activeOpacity={0.8}
             >
               <LinearGradient
@@ -88,18 +64,10 @@ export default function WelcomeScreen(): React.JSX.Element {
                 <Text style={styles.ctaArrow}>→</Text>
               </LinearGradient>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.secondaryCTA}
-              onPress={() => router.push('/login' as any)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.secondaryCTAText}>{t('welcome.login')}</Text>
-            </TouchableOpacity>
           </View>
 
           <Text style={styles.footerText}>{t('welcome.footer')}</Text>
-        </ScrollView>
+        </View>
       </LinearGradient>
     </View>
   );
@@ -113,10 +81,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flexGrow: 1,
+    flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 60,
-    paddingBottom: 30,
+    justifyContent: 'center',
+    paddingBottom: 40,
   },
   heroSection: {
     alignItems: 'center',
@@ -127,18 +95,25 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   logoBadge: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 3,
+    borderWidth: 4,
     borderColor: 'rgba(255,255,255,0.5)',
+    overflow: 'hidden',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
-  logoIcon: {
-    fontSize: 50,
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   appName: {
     fontSize: 42,
@@ -148,18 +123,6 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 4,
-  },
-  badge: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 8,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 13,
-    fontWeight: '700',
   },
   heroTextContainer: {
     alignItems: 'center',
@@ -181,37 +144,6 @@ const styles = StyleSheet.create({
     marginTop: 12,
     lineHeight: 24,
     paddingHorizontal: 20,
-  },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 40,
-  },
-  featureCard: {
-    width: (width - 60) / 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  featureEmoji: {
-    fontSize: 36,
-    marginBottom: 8,
-  },
-  featureTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: 'white',
-    marginBottom: 4,
-  },
-  featureDesc: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '500',
   },
   ctaContainer: {
     marginTop: 20,
@@ -243,19 +175,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#667eea',
     fontWeight: 'bold',
-  },
-  secondaryCTA: {
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
-    alignItems: 'center',
-  },
-  secondaryCTAText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '700',
   },
   footerText: {
     fontSize: 13,

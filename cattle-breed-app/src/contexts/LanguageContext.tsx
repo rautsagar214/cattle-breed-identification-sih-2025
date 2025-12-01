@@ -15,33 +15,19 @@ const LANGUAGE_KEY = '@app_language';
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { i18n, t } = useTranslation();
-  const [language, setLanguage] = useState(i18n.language);
+  // Force language to English for Phase 1
+  const language = 'en';
 
   useEffect(() => {
-    // Load saved language preference
-    loadLanguage();
+    // Ensure i18next is set to English
+    if (i18n.language !== 'en') {
+      i18n.changeLanguage('en');
+    }
   }, []);
 
-  const loadLanguage = async () => {
-    try {
-      const savedLang = await AsyncStorage.getItem(LANGUAGE_KEY);
-      if (savedLang) {
-        await i18n.changeLanguage(savedLang);
-        setLanguage(savedLang);
-      }
-    } catch (error) {
-      console.error('Error loading language:', error);
-    }
-  };
-
   const changeLanguage = async (lang: string) => {
-    try {
-      await i18n.changeLanguage(lang);
-      await AsyncStorage.setItem(LANGUAGE_KEY, lang);
-      setLanguage(lang);
-    } catch (error) {
-      console.error('Error changing language:', error);
-    }
+    console.log('Language change disabled for Phase 1');
+    // No-op
   };
 
   return (

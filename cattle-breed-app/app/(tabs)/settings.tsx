@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { logoutUser } from '../../src/services/authService';
-import { LanguageSelector } from '../../src/components/LanguageSelector';
+
 
 export default function SettingsScreen(): React.JSX.Element {
     const router = useRouter();
@@ -21,7 +21,7 @@ export default function SettingsScreen(): React.JSX.Element {
 
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
     const [darkModeEnabled, setDarkModeEnabled] = useState(false);
-    const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+
 
     const handleLogout = async () => {
         Alert.alert(
@@ -49,18 +49,7 @@ export default function SettingsScreen(): React.JSX.Element {
         );
     };
 
-    if (showLanguageSelector) {
-        return (
-            <View style={styles.container}>
-                <View style={[styles.header, { paddingTop: 50, paddingHorizontal: 20 }]}>
-                    <TouchableOpacity onPress={() => setShowLanguageSelector(false)}>
-                        <Text style={styles.backButton}>← {t('common.back')}</Text>
-                    </TouchableOpacity>
-                </View>
-                <LanguageSelector />
-            </View>
-        );
-    }
+
 
     return (
         <ScrollView style={styles.container}>
@@ -72,27 +61,18 @@ export default function SettingsScreen(): React.JSX.Element {
                 </View>
 
                 {/* User Profile Section */}
-
-
-                {/* Language Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>🌍 {t('settings.language')}</Text>
-                    <TouchableOpacity
-                        style={styles.card}
-                        onPress={() => setShowLanguageSelector(true)}
-                    >
-                        <View style={styles.languageOption}>
-                            <View style={styles.languageLeft}>
-                                <Text style={styles.languageFlag}>🌍</Text>
-                                <View>
-                                    <Text style={styles.languageName}>{t('settings.language')}</Text>
-                                    <Text style={styles.currentLanguage}>Current: {language.toUpperCase()}</Text>
-                                </View>
-                            </View>
-                            <Text style={styles.menuArrow}>›</Text>
-                        </View>
-                    </TouchableOpacity>
+                <View style={styles.profileSection}>
+                    <View style={styles.profileIcon}>
+                        <Text style={styles.profileIconText}>
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                        </Text>
+                    </View>
+                    <View style={styles.profileInfo}>
+                        <Text style={styles.profileName}>{user?.name || 'User'}</Text>
+                        <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+                    </View>
                 </View>
+
 
 
 

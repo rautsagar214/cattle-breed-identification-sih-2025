@@ -22,8 +22,6 @@ import {
 } from '../../src/services/offline';
 import { validateImageSize, validateImageType } from '../../src/utils/security';
 import { detectBreed, initializeModel } from '../../src/services/tflite';
-import { getBreedInfo } from '../../src/services/gemini';
-import { translateBreedData, BreedData } from '../../src/utils/translation';
 
 export default function UploadScreen(): React.JSX.Element {
     const router = useRouter();
@@ -33,7 +31,7 @@ export default function UploadScreen(): React.JSX.Element {
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState('');
-    const [detectionResult, setDetectionResult] = useState<BreedData | null>(null);
+    const [detectionResult, setDetectionResult] = useState({});
 
     const requestPermissions = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -44,14 +42,7 @@ export default function UploadScreen(): React.JSX.Element {
         return true;
     };
 
-    const requestCameraPermissions = async () => {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need camera permissions to take photos');
-            return false;
-        }
-        return true;
-    };
+
 
     const pickImageFromGallery = async () => {
         const hasPermission = await requestPermissions();
@@ -89,40 +80,7 @@ export default function UploadScreen(): React.JSX.Element {
         }
     };
 
-    const takePhoto = async () => {
-        const hasPermission = await requestCameraPermissions();
-        if (!hasPermission) return;
 
-        const result = await ImagePicker.launchCameraAsync({
-            allowsEditing: true,
-            aspect: [4, 3],
-            quality: 0.7, // Compress for faster upload
-        });
-
-        if (!result.canceled && result.assets[0]) {
-            const image = result.assets[0];
-
-            // Validate image size (max 5MB)
-            if (image.fileSize) {
-                const sizeCheck = validateImageSize(image.fileSize, 5);
-                if (!sizeCheck.isValid) {
-                    Alert.alert('Image Too Large', sizeCheck.error + '\n\nPlease try taking the photo again with lower quality.');
-                    return;
-                }
-            }
-
-            // Validate image type
-            if (image.mimeType) {
-                const typeCheck = validateImageType(image.mimeType);
-                if (!typeCheck.isValid) {
-                    Alert.alert('Invalid Image Type', typeCheck.error);
-                    return;
-                }
-            }
-
-            setSelectedImage(image.uri);
-        }
-    };
 
     const analyzeImage = async () => {
         if (!selectedImage) {
@@ -139,17 +97,8 @@ export default function UploadScreen(): React.JSX.Element {
         setIsAnalyzing(true);
         setIsAnalyzing(true);
         try {
-            // Step 1: Check Network Status
-            // If Online: Show alert and STOP (as per user request)
-            if (isOnline) {
-                Alert.alert(
-                    'Online Mode',
-                    'Breed detection is currently disabled in online mode.\n\nPlease disconnect from internet to use the offline TFLite model.',
-                    [{ text: 'OK' }]
-                );
-                setIsAnalyzing(false);
-                return;
-            }
+            // Step 1: Check Network Status - Removed to allow online usage
+            // if (isOnline) { ... }
 
             // Step 2: Offline Mode - Run TFLite
             setUploadProgress(t('upload.initializing') || 'Initializing model...');
@@ -159,7 +108,7 @@ export default function UploadScreen(): React.JSX.Element {
             const detection = await detectBreed(selectedImage);
 
             // Offline: Use basic info (will be translated if cached)
-            const breedData: BreedData = {
+            const breedData = {
                 breedName: detection.breedName,
                 description: `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence. Connect to internet for detailed information.`,
                 characteristics: [
@@ -268,14 +217,7 @@ export default function UploadScreen(): React.JSX.Element {
 
                 {/* Upload Buttons */}
                 <View style={styles.buttonsContainer}>
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={takePhoto}
-                        disabled={isAnalyzing}
-                    >
-                        <Text style={styles.buttonIcon}>📷</Text>
-                        <Text style={styles.buttonText}>{t('upload.takePhoto')}</Text>
-                    </TouchableOpacity>
+
 
                     <TouchableOpacity
                         style={styles.secondaryButton}

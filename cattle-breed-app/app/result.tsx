@@ -11,8 +11,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../src/contexts/LanguageContext';
-import { useTranslatedBreedData } from '../src/hooks/useTranslatedData';
-import { BreedData } from '../src/utils/translation';
 
 interface BreedResult {
   breedName: string;
@@ -27,7 +25,7 @@ function ResultScreen(): React.JSX.Element {
   const router = useRouter();
   const { t, language } = useLanguage();
   const [loading, setLoading] = useState(true);
-  
+
   // Initialize with default data to avoid null
   const [originalResult, setOriginalResult] = useState<BreedResult>({
     breedName: 'Loading...',
@@ -90,18 +88,12 @@ function ResultScreen(): React.JSX.Element {
   }, []);
 
   // Convert to BreedData format - always non-null (memoized for performance)
-  const breedData: BreedData = React.useMemo(() => ({
+  const breedData = React.useMemo(() => ({
     breedName: originalResult.breedName,
     description: originalResult.description || `${originalResult.breedName} is one of the finest indigenous dairy breeds from India. Known for excellent characteristics.`,
     characteristics: originalResult.characteristics,
     careTips: originalResult.careTips,
   }), [originalResult]);
-
-  // 🌐 Real-time translation hook - automatically translates when language changes
-  const { data: translatedData, loading: translating } = useTranslatedBreedData(
-    breedData,
-    language
-  );
 
   // Show loading state AFTER all hooks are called
   if (loading) {
@@ -114,7 +106,7 @@ function ResultScreen(): React.JSX.Element {
   }
 
   // Use translated data if available, otherwise original
-  const displayData = translatedData || breedData;
+  const displayData = breedData;
   const result: BreedResult = {
     ...originalResult,
     breedName: displayData.breedName,
@@ -150,17 +142,10 @@ function ResultScreen(): React.JSX.Element {
               </Text>
             </View>
           </View>
-          
-          {translating ? (
-            <View style={styles.translatingContainer}>
-              <ActivityIndicator size="small" color="white" />
-              <Text style={styles.translatingText}>Translating...</Text>
-            </View>
-          ) : (
-            <Text style={styles.breedDescription}>
-              {displayData.description}
-            </Text>
-          )}
+
+          <Text style={styles.breedDescription}>
+            {displayData.description}
+          </Text>
         </View>
 
         {/* Characteristics */}
@@ -216,7 +201,7 @@ function ResultScreen(): React.JSX.Element {
         {/* Disclaimer */}
         <View style={styles.disclaimer}>
           <Text style={styles.disclaimerText}>
-            WARNING: AI predictions are for reference only. Please consult a veterinary expert 
+            WARNING: AI predictions are for reference only. Please consult a veterinary expert
             for accurate identification and professional advice.
           </Text>
         </View>
