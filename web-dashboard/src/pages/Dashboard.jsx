@@ -106,6 +106,13 @@ const Dashboard = () => {
             return;
         }
 
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            setMessage({ type: 'error', text: 'Please enter a valid email address' });
+            return;
+        }
+
         setSubmitLoading(true);
         setMessage(null);
 
@@ -142,7 +149,11 @@ const Dashboard = () => {
 
                 <nav className="flex-1 py-6 px-3 space-y-2">
                     <button
-                        onClick={() => setActiveTab('flw-list')}
+                        onClick={() => {
+                            setActiveTab('flw-list');
+                            setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                            setMessage(null);
+                        }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'flw-list' ? 'bg-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
                     >
                         <Users size={20} />
@@ -150,7 +161,11 @@ const Dashboard = () => {
                     </button>
 
                     <button
-                        onClick={() => setActiveTab('register')}
+                        onClick={() => {
+                            setActiveTab('register');
+                            setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                            setMessage(null);
+                        }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'register' ? 'bg-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
                     >
                         <UserPlus size={20} />
@@ -203,7 +218,11 @@ const Dashboard = () => {
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl text-primary">Field Level Workers</h2>
                                 <div className='flex gap-2'>
-                                    <button onClick={() => setActiveTab('register')} className="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 transition-colors shadow-md">
+                                    <button onClick={() => {
+                                        setActiveTab('register');
+                                        setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                                        setMessage(null);
+                                    }} className="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 transition-colors shadow-md">
                                         <UserPlus size={18} /> Add New
                                     </button>
                                     <button onClick={fetchFlws} className="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 transition-colors shadow-md">
@@ -355,10 +374,13 @@ const Dashboard = () => {
                                     <div className="col-span-2 flex justify-end gap-4 mt-4">
                                         <button
                                             type="button"
-                                            onClick={() => setActiveTab('flw-list')}
-                                            className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+                                            onClick={() => {
+                                                setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                                                setMessage(null);
+                                            }}
+                                            className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors border border-gray-200"
                                         >
-                                            Cancel
+                                            Reset Form
                                         </button>
                                         <button
                                             type="submit"
