@@ -18,7 +18,8 @@ import a6logo from '../assets/a6logo.jpg';
 const Dashboard = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('flw-list');
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
     const [flws, setFlws] = useState([]);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
@@ -33,6 +34,20 @@ const Dashboard = () => {
     const [message, setMessage] = useState(null);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 768);
+            if (window.innerWidth > 768) {
+                setSidebarOpen(true);
+            } else {
+                setSidebarOpen(false);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem('adminToken');
@@ -70,11 +85,27 @@ const Dashboard = () => {
     };
 
     const handleInputChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === 'phone') {
+            // Only allow numbers and max 10 digits
+            if (/^\d*$/.test(value) && value.length <= 10) {
+                setFormData({ ...formData, [name]: value });
+            }
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate phone number
+        if (formData.phone.length !== 10) {
+            setMessage({ type: 'error', text: 'Phone number must be exactly 10 digits' });
+            return;
+        }
+
         setSubmitLoading(true);
         setMessage(null);
 
@@ -99,7 +130,7 @@ const Dashboard = () => {
     return (
         <div className="flex h-screen bg-background font-sans">
             {/* Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-primary text-white transition-all duration-300 flex flex-col shadow-2xl z-20`}>
+            <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 ${sidebarOpen ? 'md:w-64' : 'md:w-20'} fixed md:static inset-y-0 left-0 bg-primary text-white transition-all duration-300 flex flex-col shadow-2xl z-20 h-full`}>
                 <div className="p-4 flex items-center justify-center border-b border-gray-700 h-20">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-secondary">
@@ -138,10 +169,18 @@ const Dashboard = () => {
                 </div>
             </aside>
 
+            {/* Mobile Sidebar Overlay */}
+            {isMobile && sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-10"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
             {/* Main Content */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden relative">
                 {/* Header */}
-                <header className="h-20 bg-surface border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10">
+                <header className="h-20 bg-surface border-b border-gray-200 flex items-center justify-between px-4 md:px-8 shadow-sm z-10">
                     <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-500 hover:text-primary transition-colors">
                         <Menu size={24} />
                     </button>
@@ -251,14 +290,21 @@ const Dashboard = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                        <input
-                                            type="tel"
-                                            name="phone"
-                                            value={formData.phone}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none"
-                                            required
-                                        />
+                                        <div className="relative">
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1 border-r border-gray-300 pr-2">
+                                                <span className="text-lg">🇮🇳</span>
+                                                <span className="text-gray-500 text-sm font-medium">+91</span>
+                                            </div>
+                                            <input
+                                                type="tel"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                className="w-full pl-24 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none"
+                                                placeholder="9876543210"
+                                                required
+                                            />
+                                        </div>
                                     </div>
 
                                     <div>
