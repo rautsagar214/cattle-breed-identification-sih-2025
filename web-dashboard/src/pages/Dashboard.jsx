@@ -180,7 +180,8 @@ const Dashboard = () => {
                                             <tr>
                                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
                                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
-                                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Location</th>
+                                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</th>
+                                                <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone number</th>
                                                 <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
                                             </tr>
                                         </thead>
@@ -200,14 +201,11 @@ const Dashboard = () => {
                                                                 <span className="font-medium text-gray-900">{flw.name}</span>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex flex-col text-sm text-gray-500">
-                                                                <span className="flex items-center gap-1"><Phone size={12} /> {flw.phone}</span>
-                                                                <span className="flex items-center gap-1"><Mail size={12} /> {flw.email}</span>
-                                                            </div>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                                            {flw.email}
                                                         </td>
                                                         <td className="px-6 py-4 text-sm text-gray-500">
-                                                            {flw.city}, {flw.state}
+                                                            {flw.phone}
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 flex items-center gap-1 w-fit">
