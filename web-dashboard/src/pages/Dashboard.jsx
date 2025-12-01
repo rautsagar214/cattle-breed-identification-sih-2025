@@ -13,6 +13,7 @@ import {
     ChevronRight,
     Activity
 } from 'lucide-react';
+import { State, City } from 'country-state-city';
 import a6logo from '../assets/a6logo.jpg';
 
 const Dashboard = () => {
@@ -26,7 +27,9 @@ const Dashboard = () => {
         name: '',
         phone: '',
         email: '',
+        email: '',
         state: '',
+        stateCode: '',
         city: '',
         address: ''
     });
@@ -124,7 +127,7 @@ const Dashboard = () => {
 
             if (response.data.success) {
                 setMessage({ type: 'success', text: `FLW Registered! Temp Password: ${response.data.data.tempPassword}` });
-                setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                setFormData({ name: '', phone: '', email: '', state: '', stateCode: '', city: '', address: '' });
                 fetchFlws(); // Refresh list
             }
         } catch (error) {
@@ -151,7 +154,7 @@ const Dashboard = () => {
                     <button
                         onClick={() => {
                             setActiveTab('flw-list');
-                            setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                            setFormData({ name: '', phone: '', email: '', state: '', stateCode: '', city: '', address: '' });
                             setMessage(null);
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'flw-list' ? 'bg-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
@@ -163,7 +166,7 @@ const Dashboard = () => {
                     <button
                         onClick={() => {
                             setActiveTab('register');
-                            setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                            setFormData({ name: '', phone: '', email: '', state: '', stateCode: '', city: '', address: '' });
                             setMessage(null);
                         }}
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'register' ? 'bg-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
@@ -182,15 +185,17 @@ const Dashboard = () => {
                         {sidebarOpen && <span>Logout</span>}
                     </button>
                 </div>
-            </aside>
+            </aside >
 
             {/* Mobile Sidebar Overlay */}
-            {isMobile && sidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-10"
-                    onClick={() => setSidebarOpen(false)}
-                />
-            )}
+            {
+                isMobile && sidebarOpen && (
+                    <div
+                        className="fixed inset-0 bg-black/50 z-10"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                )
+            }
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -220,7 +225,7 @@ const Dashboard = () => {
                                 <div className='flex gap-2'>
                                     <button onClick={() => {
                                         setActiveTab('register');
-                                        setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                                        setFormData({ name: '', phone: '', email: '', state: '', stateCode: '', city: '', address: '' });
                                         setMessage(null);
                                     }} className="bg-secondary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-cyan-700 transition-colors shadow-md">
                                         <UserPlus size={18} /> Add New
@@ -340,24 +345,46 @@ const Dashboard = () => {
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             name="state"
-                                            value={formData.state}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none"
-                                        />
+                                            value={formData.stateCode}
+                                            onChange={(e) => {
+                                                const selectedStateCode = e.target.value;
+                                                const selectedState = State.getStatesOfCountry('IN').find(s => s.isoCode === selectedStateCode);
+                                                setFormData({
+                                                    ...formData,
+                                                    state: selectedState ? selectedState.name : '',
+                                                    stateCode: selectedStateCode,
+                                                    city: ''
+                                                });
+                                            }}
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-white"
+                                        >
+                                            <option value="">Select State</option>
+                                            {State.getStatesOfCountry('IN').map((state) => (
+                                                <option key={state.isoCode} value={state.isoCode}>
+                                                    {state.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             name="city"
                                             value={formData.city}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none"
-                                        />
+                                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                                            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-secondary focus:border-secondary outline-none bg-white"
+                                            disabled={!formData.stateCode}
+                                        >
+                                            <option value="">Select City</option>
+                                            {formData.stateCode && City.getCitiesOfState('IN', formData.stateCode).map((city) => (
+                                                <option key={city.name} value={city.name}>
+                                                    {city.name}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     <div className="col-span-2">
@@ -375,7 +402,7 @@ const Dashboard = () => {
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setFormData({ name: '', phone: '', email: '', state: '', city: '', address: '' });
+                                                setFormData({ name: '', phone: '', email: '', state: '', stateCode: '', city: '', address: '' });
                                                 setMessage(null);
                                             }}
                                             className="px-6 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors border border-gray-200"
@@ -392,11 +419,11 @@ const Dashboard = () => {
                                     </div>
                                 </form>
                             </div>
-                        </div>
+                        </div >
                     )}
-                </main>
-            </div>
-        </div>
+                </main >
+            </div >
+        </div >
     );
 };
 
