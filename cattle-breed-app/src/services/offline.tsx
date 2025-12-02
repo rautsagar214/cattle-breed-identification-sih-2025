@@ -14,7 +14,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 // COMMENTED OUT: FileSystem not currently used in implementation
-// import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 
 // ==========================================
 // TypeScript Interfaces
@@ -98,7 +98,7 @@ export const subscribeToNetworkChanges = (
       type: state.type,
     });
   });
-  
+
   return unsubscribe;
 };
 
@@ -107,14 +107,11 @@ export const subscribeToNetworkChanges = (
 // ==========================================
 
 /**
- * Save image to local device storage (as base64 in AsyncStorage)
- * 
- * NOTE: For large-scale apps, consider using expo-file-system for better performance.
- * This simplified version stores base64 directly in AsyncStorage for maximum compatibility.
+ * Save image to local device storage (FileSystem)
  * 
  * @param imageUri Original image URI
  * @param userId User's ID
- * @returns Local storage key (not a file path)
+ * @returns Local file URI
  */
 export const saveImageLocally = async (
   imageUri: string,
@@ -122,23 +119,17 @@ export const saveImageLocally = async (
 ): Promise<string> => {
   try {
     const timestamp = Date.now();
-    const storageKey = `@cattle_image:${userId}_${timestamp}`;
-    
-    // Convert image to base64
-    const response = await fetch(imageUri);
-    const blob = await response.blob();
-    const base64 = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+    const fileName = `cattle_${userId}_${timestamp}.jpg`;
+    const destination = `${FileSystem.documentDirectory}${fileName}`;
+
+    // Copy file to app's document directory
+    await FileSystem.copyAsync({
+      from: imageUri,
+      to: destination
     });
-    
-    // Store in AsyncStorage
-    await AsyncStorage.setItem(storageKey, base64);
-    
-    console.log('Image saved locally:', storageKey);
-    return storageKey;
+
+    console.log('Image saved locally to file system:', destination);
+    return destination;
   } catch (error: any) {
     console.error('Error saving image locally:', error);
     throw new Error(`Failed to save image locally: ${error.message}`);
@@ -146,13 +137,16 @@ export const saveImageLocally = async (
 };
 
 /**
- * Delete local image from AsyncStorage
- * @param storageKey AsyncStorage key for the image
+ * Delete local image from FileSystem
+ * @param imageUri Local file URI
  */
-export const deleteLocalImage = async (storageKey: string): Promise<void> => {
+export const deleteLocalImage = async (imageUri: string): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(storageKey);
-    console.log('Local image deleted:', storageKey);
+    // Only delete if it's a file in our document directory
+    if (imageUri.startsWith('file://') && imageUri.includes(FileSystem.documentDirectory || '')) {
+      await FileSystem.deleteAsync(imageUri, { idempotent: true });
+      console.log('Local image deleted:', imageUri);
+    }
   } catch (error) {
     console.error('Error deleting local image:', error);
   }
@@ -170,16 +164,16 @@ export const saveResultOffline = async (result: OfflineResult): Promise<void> =>
   try {
     // Get existing results
     const existingResults = await getOfflineResults();
-    
+
     // Add new result
     const updatedResults = [result, ...existingResults];
-    
+
     // Save to AsyncStorage
     await AsyncStorage.setItem(
       STORAGE_KEYS.OFFLINE_RESULTS,
       JSON.stringify(updatedResults)
     );
-    
+
     console.log('Result saved offline:', result.id);
   } catch (error: any) {
     console.error('Error saving result offline:', error);
@@ -231,12 +225,12 @@ export const markResultAsSynced = async (resultId: string): Promise<void> => {
     const updatedResults = results.map(result =>
       result.id === resultId ? { ...result, synced: true } : result
     );
-    
+
     await AsyncStorage.setItem(
       STORAGE_KEYS.OFFLINE_RESULTS,
       JSON.stringify(updatedResults)
     );
-    
+
     console.log('Result marked as synced:', resultId);
   } catch (error) {
     console.error('Error marking result as synced:', error);
@@ -250,12 +244,12 @@ export const clearSyncedResults = async (): Promise<void> => {
   try {
     const results = await getOfflineResults();
     const unsyncedResults = results.filter(result => !result.synced);
-    
+
     await AsyncStorage.setItem(
       STORAGE_KEYS.OFFLINE_RESULTS,
       JSON.stringify(unsyncedResults)
     );
-    
+
     console.log('Synced results cleared');
   } catch (error) {
     console.error('Error clearing synced results:', error);
@@ -276,12 +270,12 @@ export const addToPendingQueue = async (
   try {
     const queue = await getPendingUploads();
     queue.push(upload);
-    
+
     await AsyncStorage.setItem(
       STORAGE_KEYS.PENDING_UPLOADS,
       JSON.stringify(queue)
     );
-    
+
     console.log('Added to pending upload queue:', upload.id);
   } catch (error: any) {
     console.error('Error adding to pending queue:', error);
@@ -316,12 +310,12 @@ export const removeFromPendingQueue = async (
   try {
     const queue = await getPendingUploads();
     const updatedQueue = queue.filter(upload => upload.id !== uploadId);
-    
+
     await AsyncStorage.setItem(
       STORAGE_KEYS.PENDING_UPLOADS,
       JSON.stringify(updatedQueue)
     );
-    
+
     console.log('Removed from pending queue:', uploadId);
   } catch (error) {
     console.error('Error removing from pending queue:', error);
@@ -433,24 +427,24 @@ export default {
   // Network
   checkNetworkStatus,
   subscribeToNetworkChanges,
-  
+
   // Local Storage
   saveImageLocally,
   deleteLocalImage,
-  
+
   // Offline Results
   saveResultOffline,
   getOfflineResults,
   getOfflineResultsByUser,
   markResultAsSynced,
   clearSyncedResults,
-  
+
   // Upload Queue
   addToPendingQueue,
   getPendingUploads,
   removeFromPendingQueue,
   getPendingUploadCount,
-  
+
   // Cache
   cacheUserData,
   getCachedUserData,

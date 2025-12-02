@@ -131,44 +131,19 @@ export default function UploadScreen(): React.JSX.Element {
 
             setDetectionResult(breedData);
 
-            // ALWAYS Save locally first
-            setUploadProgress('Saving result...');
-
-            // Save image to local storage
-            const localImagePath = await saveImageLocally(selectedImage, String(user.id));
-
-            // Create result object
-            const resultId = `result_${Date.now()}`;
-            const resultObj = {
-                id: resultId,
-                userId: String(user.id),
-                breedName: analysisResult.breedName,
-                confidence: analysisResult.confidence,
-                imageUri: localImagePath,
-                characteristics: analysisResult.characteristics,
-                careTips: analysisResult.careTips,
-                timestamp: new Date().toISOString(),
-                synced: false,
-            };
-
-            // Save result offline
-            await saveResultOffline(resultObj);
-
-            await refreshPendingCount();
-
-            // Store result for display on result screen
-            await AsyncStorage.setItem('latestResult', JSON.stringify({
-                breedName: analysisResult.breedName,
-                confidence: analysisResult.confidence,
-                imageUrl: localImagePath,
-                characteristics: analysisResult.characteristics,
-                careTips: analysisResult.careTips,
-                description: breedData.description || `${analysisResult.breedName} cattle breed detected`,
-            }));
-
-            // Navigate directly to result screen
+            // Navigate directly to result screen with params
             console.log('✅ Analysis complete, navigating to results...');
-            router.push('/result' as any);
+            router.push({
+                pathname: '/result',
+                params: {
+                    breedName: analysisResult.breedName,
+                    confidence: analysisResult.confidence,
+                    imageUrl: selectedImage, // Pass the temporary URI directly
+                    characteristics: JSON.stringify(analysisResult.characteristics),
+                    careTips: JSON.stringify(analysisResult.careTips),
+                    description: breedData.description || `${analysisResult.breedName} cattle breed detected`,
+                }
+            } as any);
 
             setSelectedImage(null);
         } catch (error: any) {

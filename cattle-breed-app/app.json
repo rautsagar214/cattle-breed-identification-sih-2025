@@ -10,10 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.sagar6063.cattlebreedapp",
       "infoPlist": {
         "NSCameraUsageDescription": "This app needs access to the camera to take photos of cattle for breed identification.",
         "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to select cattle photos for breed identification.",
-        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library."
+        "NSPhotoLibraryAddUsageDescription": "This app needs permission to save photos to your library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,7 +29,6 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
     },

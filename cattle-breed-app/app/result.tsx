@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useLanguage } from '../src/contexts/LanguageContext';
 
 interface BreedResult {
@@ -35,71 +35,30 @@ function ResultScreen(): React.JSX.Element {
     careTips: [],
   });
 
-  // Load actual result data from AsyncStorage
+  const params = useLocalSearchParams();
+
+  // Load result data from params
   useEffect(() => {
-    const loadResult = async () => {
+    if (params.breedName) {
       try {
-        const resultJson = await AsyncStorage.getItem('latestResult');
-        if (resultJson) {
-          const result = JSON.parse(resultJson);
-          console.log('📊 Loaded result from storage:', result);
-          let finalImageUrl = result.imageUrl;
-
-          // Check if image is stored locally (starts with @cattle_image)
-          if (result.imageUrl && result.imageUrl.startsWith('@cattle_image:')) {
-            try {
-              const base64Image = await AsyncStorage.getItem(result.imageUrl);
-              if (base64Image) {
-                finalImageUrl = base64Image;
-              }
-            } catch (err) {
-              console.error('Error loading local image:', err);
-            }
-          }
-
-          setOriginalResult({
-            breedName: result.breedName || 'Unknown',
-            confidence: result.confidence || 0,
-            imageUrl: finalImageUrl,
-            characteristics: result.characteristics || [],
-            careTips: result.careTips || [],
-            description: result.description,
-          });
-        } else {
-          console.warn('⚠️ No result data found in storage');
-          // Fallback to mock data
-          setOriginalResult({
-            breedName: 'Gir',
-            confidence: 0.95,
-            imageUrl: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=800',
-            characteristics: [
-              'Distinctive lyre-shaped horns',
-              'Prominent forehead hump',
-              'White to reddish-brown coat',
-            ],
-            careTips: [
-              'Provide clean water daily',
-              'Feed balanced diet',
-              'Regular health checkups',
-            ],
-          });
-        }
-      } catch (error) {
-        console.error('❌ Error loading result:', error);
-        // Set fallback data on error
         setOriginalResult({
-          breedName: 'Error',
-          confidence: 0,
-          imageUrl: undefined,
-          characteristics: ['Failed to load data'],
-          careTips: ['Please try again'],
+          breedName: params.breedName as string,
+          confidence: Number(params.confidence),
+          imageUrl: params.imageUrl as string,
+          characteristics: params.characteristics ? JSON.parse(params.characteristics as string) : [],
+          careTips: params.careTips ? JSON.parse(params.careTips as string) : [],
+          description: params.description as string,
         });
+      } catch (e) {
+        console.error('Error parsing params:', e);
       } finally {
         setLoading(false);
       }
-    };
-    loadResult();
-  }, []);
+    } else {
+      // Fallback for direct access or testing
+      setLoading(false);
+    }
+  }, [params]);
 
   // Convert to BreedData format - always non-null (memoized for performance)
   const breedData = React.useMemo(() => ({
