@@ -38,8 +38,8 @@ function RootLayoutContent() {
     const inTabsGroup = segments[0] === '(tabs)';
     const inAuthGroup = segments[0] === 'login' || segments[0] === 'signup' || segments[0] === 'index';
 
-    if (user && inAuthGroup) {
-      // Redirect to the tabs group if the user is signed in and trying to access auth screens
+    if (user && user.id !== -1 && inAuthGroup) {
+      // Redirect to the tabs group if the user is signed in (and not a guest) and trying to access auth screens
       router.replace('/(tabs)');
     } else if (!user && inTabsGroup) {
       // Redirect to the login page if the user is not signed in and trying to access tabs

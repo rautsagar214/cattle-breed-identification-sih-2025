@@ -43,10 +43,24 @@ function ResultScreen(): React.JSX.Element {
         if (resultJson) {
           const result = JSON.parse(resultJson);
           console.log('📊 Loaded result from storage:', result);
+          let finalImageUrl = result.imageUrl;
+
+          // Check if image is stored locally (starts with @cattle_image)
+          if (result.imageUrl && result.imageUrl.startsWith('@cattle_image:')) {
+            try {
+              const base64Image = await AsyncStorage.getItem(result.imageUrl);
+              if (base64Image) {
+                finalImageUrl = base64Image;
+              }
+            } catch (err) {
+              console.error('Error loading local image:', err);
+            }
+          }
+
           setOriginalResult({
             breedName: result.breedName || 'Unknown',
             confidence: result.confidence || 0,
-            imageUrl: result.imageUrl,
+            imageUrl: finalImageUrl,
             characteristics: result.characteristics || [],
             careTips: result.careTips || [],
             description: result.description,

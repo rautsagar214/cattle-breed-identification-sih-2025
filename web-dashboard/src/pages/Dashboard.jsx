@@ -14,7 +14,7 @@ import {
     Activity
 } from 'lucide-react';
 import { State, City } from 'country-state-city';
-import a6logo from '../assets/a6logo.jpg';
+import a6logo from '../assets/a6_logo.svg';
 
 const Dashboard = () => {
     const navigate = useNavigate();

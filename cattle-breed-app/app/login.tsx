@@ -21,7 +21,7 @@ import { ServiceHealthIndicator } from '../src/components/ServiceHealthIndicator
 export default function LoginScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useLanguage();
-  const { setUser } = useAuth();
+  const { setUser, loginAsGuest } = useAuth();
 
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [phone, setPhone] = useState('');
@@ -52,7 +52,7 @@ export default function LoginScreen(): React.JSX.Element {
       await sendOtp(phone);
       setStep('OTP');
       setTimer(30); // 30 seconds cooldown
-      Alert.alert('OTP Sent', 'Please check your messages for the verification code.');
+      // Alert removed as per user request
     } catch (error: any) {
       Alert.alert('Error', error.message);
     } finally {
@@ -77,6 +77,11 @@ export default function LoginScreen(): React.JSX.Element {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSkipLogin = () => {
+    loginAsGuest();
+    router.replace('/(tabs)');
   };
 
   const handleOtpChange = (text: string, index: number) => {
@@ -134,7 +139,7 @@ export default function LoginScreen(): React.JSX.Element {
           <Text style={styles.headerSubtitle}>
             {step === 'PHONE'
               ? 'Enter your mobile number to continue'
-              : `Enter the 4-digit code sent to +91 ${phone}`
+              : `Enter the 4-digit code sent to +91 XXXXX XXX${phone.slice(-3)}`
             }
           </Text>
         </View>
@@ -172,6 +177,14 @@ export default function LoginScreen(): React.JSX.Element {
                 ) : (
                   <Text style={styles.btnText}>Get OTP</Text>
                 )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.skipBtn}
+                onPress={handleSkipLogin}
+                disabled={loading}
+              >
+                <Text style={styles.skipBtnText}>Skip Login (Guest Mode)</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -376,5 +389,16 @@ const styles = StyleSheet.create({
     color: '#667eea',
     fontSize: 16,
     fontWeight: '600',
+  },
+  skipBtn: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  skipBtnText: {
+    color: '#7f8c8d',
+    fontSize: 16,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

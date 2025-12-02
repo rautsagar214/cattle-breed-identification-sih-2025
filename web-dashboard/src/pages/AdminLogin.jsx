@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
-import a6logo from '../assets/a6logo.jpg';
+import a6logo from '../assets/a6_logo.svg';
 
 const AdminLogin = () => {
     const [email, setEmail] = useState('');

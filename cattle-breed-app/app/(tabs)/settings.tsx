@@ -64,12 +64,12 @@ export default function SettingsScreen(): React.JSX.Element {
                 <View style={styles.profileSection}>
                     <View style={styles.profileIcon}>
                         <Text style={styles.profileIconText}>
-                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            {user?.id === -1 ? 'G' : (user?.name ? user.name.charAt(0).toUpperCase() : 'U')}
                         </Text>
                     </View>
                     <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{user?.name || 'User'}</Text>
-                        <Text style={styles.profileEmail}>{user?.email || 'user@example.com'}</Text>
+                        <Text style={styles.profileName}>{user?.id === -1 ? 'Guest User' : (user?.name || 'User')}</Text>
+                        <Text style={styles.profileEmail}>{user?.id === -1 ? 'Not logged in' : (user?.email || 'user@example.com')}</Text>
                     </View>
                 </View>
 
@@ -117,13 +117,15 @@ export default function SettingsScreen(): React.JSX.Element {
                     </View>
                 </View>
 
-                {/* Logout Button */}
+                {/* Logout/Login Button */}
                 {user && (
                     <TouchableOpacity
-                        style={styles.logoutButton}
-                        onPress={handleLogout}
+                        style={[styles.logoutButton, user.id === -1 && styles.loginButton]}
+                        onPress={user.id === -1 ? () => router.replace('/login' as any) : handleLogout}
                     >
-                        <Text style={styles.logoutButtonText}>🚪 {t('settings.logout')}</Text>
+                        <Text style={styles.logoutButtonText}>
+                            {user.id === -1 ? '🔑 Login' : `🚪 ${t('settings.logout')}`}
+                        </Text>
                     </TouchableOpacity>
                 )}
 
@@ -303,6 +305,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 5,
         elevation: 5,
+    },
+    loginButton: {
+        backgroundColor: '#3498db',
     },
     logoutButtonText: {
         color: 'white',

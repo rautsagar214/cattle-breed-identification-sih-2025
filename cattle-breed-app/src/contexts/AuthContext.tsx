@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   refreshUser: () => Promise<void>;
   setUser: (user: User | null) => void;
+  loginAsGuest: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -15,6 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   refreshUser: async () => { },
   setUser: () => { },
+  loginAsGuest: () => { },
 });
 
 export const useAuth = () => {
@@ -60,7 +62,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     initAuth();
+    initAuth();
   }, []);
+
+  const loginAsGuest = () => {
+    const guestUser: User = {
+      id: -1,
+      email: 'guest@example.com',
+      name: 'Guest User',
+      phone: '',
+      role: 'guest',
+      created_at: new Date().toISOString(),
+    };
+    setUser(guestUser);
+    console.log('👤 Logged in as Guest');
+  };
 
   const value = {
     user,
@@ -68,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user,
     refreshUser,
     setUser,
+    loginAsGuest,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
