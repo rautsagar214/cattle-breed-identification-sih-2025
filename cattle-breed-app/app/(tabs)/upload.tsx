@@ -12,6 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useNetwork } from '../../src/contexts/NetworkContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
@@ -21,17 +22,24 @@ import {
     addToPendingQueue,
 } from '../../src/services/offline';
 import { validateImageSize, validateImageType } from '../../src/utils/security';
-import { detectBreed, initializeModel } from '../../src/services/tflite';
+import { detectBreed, detectMultipleBreeds, initializeModel } from '../../src/services/tflite';
+import { GuidanceAnimation } from '../../src/components/GuidanceAnimation';
+import { initDatabase, saveScanResult } from '../../src/services/db';
 
 export default function UploadScreen(): React.JSX.Element {
     const router = useRouter();
     const { t, language } = useLanguage();
     const { user } = useAuth();
     const { isOnline, refreshPendingCount } = useNetwork();
-    const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [selectedImages, setSelectedImages] = useState<string[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState('');
     const [detectionResult, setDetectionResult] = useState({});
+
+    // Initialize DB on mount
+    React.useEffect(() => {
+        initDatabase().catch(err => console.error('DB Init Error:', err));
+    }, []);
 
     const requestPermissions = async () => {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -42,15 +50,66 @@ export default function UploadScreen(): React.JSX.Element {
         return true;
     };
 
+    const requestCameraPermissions = async () => {
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'We need camera permissions to take photos');
+            return false;
+        }
+        return true;
+    };
 
+    const pickImageFromCamera = async () => {
+        if (selectedImages.length >= 3) {
+            Alert.alert('Limit Reached', 'You can only upload up to 3 images.');
+            return;
+        }
+
+        const hasPermission = await requestCameraPermissions();
+        if (!hasPermission) return;
+
+        const result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ['images'],
+            quality: 0.7,
+            allowsEditing: true,
+            aspect: [4, 3],
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const image = result.assets[0];
+            // Validate image size (max 5MB)
+            if (image.fileSize) {
+                const sizeCheck = validateImageSize(image.fileSize, 5);
+                if (!sizeCheck.isValid) {
+                    Alert.alert('Image Too Large', sizeCheck.error + '\n\nPlease choose a smaller image or compress it.');
+                    return;
+                }
+            }
+
+            // Validate image type
+            if (image.mimeType) {
+                const typeCheck = validateImageType(image.mimeType);
+                if (!typeCheck.isValid) {
+                    Alert.alert('Invalid Image Type', typeCheck.error + '\n\nPlease select a JPEG, PNG, or WebP image.');
+                    return;
+                }
+            }
+            setSelectedImages([...selectedImages, image.uri]);
+        }
+    };
 
     const pickImageFromGallery = async () => {
+        if (selectedImages.length >= 3) {
+            Alert.alert('Limit Reached', 'You can only upload up to 3 images.');
+            return;
+        }
+
         const hasPermission = await requestPermissions();
         if (!hasPermission) return;
 
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
-            quality: 0.7, // Compress to 70% quality for faster upload
+            quality: 0.7,
             allowsEditing: true,
             aspect: [4, 3],
         });
@@ -76,41 +135,42 @@ export default function UploadScreen(): React.JSX.Element {
                 }
             }
 
-            setSelectedImage(image.uri);
+            setSelectedImages([...selectedImages, image.uri]);
         }
+    };
+
+    const removeImage = (index: number) => {
+        const newImages = [...selectedImages];
+        newImages.splice(index, 1);
+        setSelectedImages(newImages);
     };
 
 
 
     const analyzeImage = async () => {
-        if (!selectedImage) {
-            Alert.alert('No Image', 'Please select or take a photo first');
+        if (selectedImages.length === 0) {
+            Alert.alert('No Image', 'Please select at least one photo');
             return;
         }
 
-        if (!user) {
-            Alert.alert('Not Logged In', 'Please login to analyze images');
-            router.push('/login' as any);
-            return;
-        }
+        // Guest check removed to allow analysis without login
+        // if (!user) { ... }
 
-        setIsAnalyzing(true);
         setIsAnalyzing(true);
         try {
-            // Step 1: Check Network Status - Removed to allow online usage
-            // if (isOnline) { ... }
-
             // Step 2: Offline Mode - Run TFLite
             setUploadProgress(t('upload.initializing') || 'Initializing model...');
             await initializeModel(); // no-op if already initialized
 
-            setUploadProgress(t('upload.analyzing') || 'Analyzing breed...');
-            const detection = await detectBreed(selectedImage);
+            setUploadProgress(t('upload.analyzing') || 'Analyzing breeds...');
+
+            // Use new multi-image detection
+            const detection = await detectMultipleBreeds(selectedImages);
 
             // Offline: Use basic info (will be translated if cached)
             const breedData = {
                 breedName: detection.breedName,
-                description: `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence. Connect to internet for detailed information.`,
+                description: `Detected with ${(detection.confidence * 100).toFixed(1)}% confidence.`,
                 characteristics: [
                     'Physical characteristics identified by AI model',
                     'Breed-specific features detected',
@@ -127,9 +187,63 @@ export default function UploadScreen(): React.JSX.Element {
                 confidence: detection.confidence,
                 characteristics: breedData.characteristics,
                 careTips: breedData.careTips,
+                allPredictions: detection.allPredictions, // Pass all predictions
             } as const;
 
             setDetectionResult(breedData);
+
+            // Save images to permanent storage
+            const permanentImageUris: string[] = [];
+            try {
+                for (const uri of selectedImages) {
+                    const savedUri = await saveImageLocally(uri, user?.id || 'guest');
+                    permanentImageUris.push(savedUri);
+                }
+            } catch (saveError) {
+                console.error('Failed to save images locally:', saveError);
+                // Fallback to original URIs if saving fails
+                permanentImageUris.push(...selectedImages);
+            }
+
+            // Save to SQLite DB
+            try {
+                // Fetch location
+                let locationData = undefined;
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === 'granted') {
+                    const location = await Location.getCurrentPositionAsync({});
+                    let locationName = undefined;
+
+                    // Reverse geocode
+                    try {
+                        const address = await Location.reverseGeocodeAsync({
+                            latitude: location.coords.latitude,
+                            longitude: location.coords.longitude
+                        });
+                        if (address && address.length > 0) {
+                            const addr = address[0];
+                            locationName = `${addr.city || ''}, ${addr.region || ''}, ${addr.country || ''}`.replace(/^, /, '').replace(/, $/, '');
+                        }
+                    } catch (geoError) {
+                        console.log('Reverse geocoding failed:', geoError);
+                    }
+
+                    locationData = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        name: locationName
+                    };
+                }
+
+                await saveScanResult(
+                    permanentImageUris,
+                    analysisResult.allPredictions.slice(0, 3),
+                    locationData
+                );
+                console.log('💾 Result saved to history DB with location');
+            } catch (dbError) {
+                console.error('Failed to save to DB:', dbError);
+            }
 
             // Navigate directly to result screen with params
             console.log('✅ Analysis complete, navigating to results...');
@@ -138,14 +252,16 @@ export default function UploadScreen(): React.JSX.Element {
                 params: {
                     breedName: analysisResult.breedName,
                     confidence: analysisResult.confidence,
-                    imageUrl: selectedImage, // Pass the temporary URI directly
+                    imageUrl: permanentImageUris[0], // Pass the first image as main
+                    allImages: JSON.stringify(permanentImageUris), // Pass all images
+                    allPredictions: JSON.stringify(analysisResult.allPredictions), // Pass top predictions
                     characteristics: JSON.stringify(analysisResult.characteristics),
                     careTips: JSON.stringify(analysisResult.careTips),
                     description: breedData.description || `${analysisResult.breedName} cattle breed detected`,
                 }
             } as any);
 
-            setSelectedImage(null);
+            setSelectedImages([]);
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to analyze image');
             console.error('Analysis error:', error);
@@ -167,32 +283,47 @@ export default function UploadScreen(): React.JSX.Element {
                     <Text style={styles.subtitle}>Take or choose a photo to identify the breed</Text>
                 </View>
 
-                {/* Image Preview */}
-                <View style={styles.imageContainer}>
-                    {selectedImage ? (
-                        <>
-                            <Image source={{ uri: selectedImage }} style={styles.previewImage} />
+                {/* Animated Guidance - Shows step based on number of images uploaded */}
+                <GuidanceAnimation step={Math.min(selectedImages.length, 2)} />
+
+                {/* Image Preview Grid */}
+                <View style={styles.gridContainer}>
+                    {selectedImages.map((uri, index) => (
+                        <View key={index} style={styles.gridItem}>
+                            <Image source={{ uri }} style={styles.gridImage} />
                             <TouchableOpacity
-                                style={styles.removeButton}
-                                onPress={() => setSelectedImage(null)}
+                                style={styles.gridRemoveBtn}
+                                onPress={() => removeImage(index)}
                             >
-                                <Text style={styles.removeButtonText}>✕ Remove</Text>
+                                <Text style={styles.gridRemoveText}>✕</Text>
                             </TouchableOpacity>
-                        </>
-                    ) : (
-                        <View style={styles.placeholderContainer}>
-                            <Text style={styles.placeholderIcon}>📷</Text>
-                            <Text style={styles.placeholderText}>No image selected</Text>
-                            <Text style={styles.placeholderSubtext}>
-                                Choose an option below to get started
-                            </Text>
+                            <View style={styles.gridBadge}>
+                                <Text style={styles.gridBadgeText}>{index + 1}</Text>
+                            </View>
                         </View>
+                    ))}
+
+                    {selectedImages.length < 3 && (
+                        <TouchableOpacity
+                            style={styles.addMoreBtn}
+                            onPress={pickImageFromGallery}
+                        >
+                            <Text style={styles.addMoreIcon}>+</Text>
+                            <Text style={styles.addMoreText}>Add Photo</Text>
+                        </TouchableOpacity>
                     )}
                 </View>
 
                 {/* Upload Buttons */}
                 <View style={styles.buttonsContainer}>
-
+                    <TouchableOpacity
+                        style={styles.primaryButton}
+                        onPress={pickImageFromCamera}
+                        disabled={isAnalyzing}
+                    >
+                        <Text style={styles.buttonIcon}>📷</Text>
+                        <Text style={styles.buttonText}>{t('upload.takePhoto') || 'Take Photo'}</Text>
+                    </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.secondaryButton}
@@ -205,7 +336,7 @@ export default function UploadScreen(): React.JSX.Element {
                 </View>
 
                 {/* Analyze Button */}
-                {selectedImage && (
+                {selectedImages.length > 0 && (
                     <TouchableOpacity
                         style={[styles.analyzeButton, isAnalyzing && styles.analyzeButtonDisabled]}
                         onPress={analyzeImage}
@@ -222,16 +353,6 @@ export default function UploadScreen(): React.JSX.Element {
                     </TouchableOpacity>
                 )}
 
-                {/* Tips */}
-                <View style={styles.tipsContainer}>
-                    <Text style={styles.tipsTitle}>📝 Tips for Best Results:</Text>
-                    <View style={styles.tipsList}>
-                        <Text style={styles.tipItem}>• Take clear, well-lit photos</Text>
-                        <Text style={styles.tipItem}>• Show the full body of the cattle</Text>
-                        <Text style={styles.tipItem}>• Avoid blurry or distant shots</Text>
-                        <Text style={styles.tipItem}>• Capture distinctive features (horns, color, hump)</Text>
-                    </View>
-                </View>
             </View>
         </ScrollView>
     );
@@ -396,5 +517,74 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#856404',
         lineHeight: 20,
+    },
+    // Removed old guidance styles
+    gridContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+        marginBottom: 20,
+    },
+    gridItem: {
+        width: '31%',
+        aspectRatio: 1,
+        borderRadius: 12,
+        overflow: 'hidden',
+        position: 'relative',
+    },
+    gridImage: {
+        width: '100%',
+        height: '100%',
+    },
+    gridRemoveBtn: {
+        position: 'absolute',
+        top: 5,
+        right: 5,
+        backgroundColor: 'rgba(231, 76, 60, 0.9)',
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    gridRemoveText: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 12,
+    },
+    gridBadge: {
+        position: 'absolute',
+        bottom: 5,
+        left: 5,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 10,
+    },
+    gridBadgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    addMoreBtn: {
+        width: '31%',
+        aspectRatio: 1,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: '#bdc3c7',
+        borderStyle: 'dashed',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8f9fa',
+    },
+    addMoreIcon: {
+        fontSize: 32,
+        color: '#bdc3c7',
+        marginBottom: 5,
+    },
+    addMoreText: {
+        fontSize: 12,
+        color: '#95a5a6',
+        fontWeight: '600',
     },
 });

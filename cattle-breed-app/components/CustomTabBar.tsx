@@ -63,6 +63,7 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
                     if (route.name === 'chatbot') iconName = 'message.fill';
                     if (route.name === 'settings') iconName = 'gearshape.fill';
                     if (route.name === 'profile') iconName = 'person.fill';
+                    if (route.name === 'history') iconName = 'clock.fill';
 
                     return (
                         <TouchableOpacity

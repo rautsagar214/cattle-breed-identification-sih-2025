@@ -237,6 +237,60 @@ export const detectBreed = async (imageUri: string): Promise<DetectionResult> =>
 };
 
 /**
+ * Run inference on multiple images and aggregate results
+ * @param {string[]} imageUris - Array of image URIs
+ * @returns {Promise<DetectionResult>} - Aggregated detection result
+ */
+export const detectMultipleBreeds = async (imageUris: string[]): Promise<DetectionResult> => {
+  try {
+    console.log(`🔍 Detecting breeds from ${imageUris.length} images...`);
+
+    if (imageUris.length === 0) {
+      throw new Error('No images provided for detection');
+    }
+
+    // Run detection on all images in parallel
+    const results = await Promise.all(imageUris.map(uri => detectBreed(uri)));
+
+    // Aggregate probabilities
+    const breedProbabilities: { [key: string]: number } = {};
+
+    // Initialize with 0
+    CATTLE_BREEDS.forEach(breed => {
+      breedProbabilities[breed] = 0;
+    });
+
+    // Sum up probabilities from all results
+    results.forEach(result => {
+      result.allPredictions.forEach(prediction => {
+        if (breedProbabilities[prediction.breed] !== undefined) {
+          breedProbabilities[prediction.breed] += prediction.confidence;
+        }
+      });
+    });
+
+    // Average probabilities
+    const aggregatedPredictions: BreedPrediction[] = CATTLE_BREEDS.map(breed => ({
+      breed,
+      confidence: breedProbabilities[breed] / imageUris.length,
+    })).sort((a, b) => b.confidence - a.confidence);
+
+    const topPrediction = aggregatedPredictions[0];
+    console.log('✅ Aggregated detection complete:', topPrediction.breed, `${(topPrediction.confidence * 100).toFixed(1)}%`);
+
+    return {
+      breedName: topPrediction.breed,
+      confidence: topPrediction.confidence,
+      allPredictions: aggregatedPredictions.slice(0, 5), // Top 5
+    };
+
+  } catch (error: any) {
+    console.error('❌ Error detecting multiple breeds:', error);
+    throw error;
+  }
+};
+
+/**
  * Get model metadata
  */
 export const getModelInfo = (): ModelInfo => {
@@ -253,5 +307,6 @@ export const getModelInfo = (): ModelInfo => {
 export default {
   initializeModel,
   detectBreed,
+  detectMultipleBreeds,
   getModelInfo,
 };

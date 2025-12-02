@@ -36,13 +36,13 @@ const registerFlw = async (req, res) => {
 
         // Insert worker with role 'FLW'
         const [result] = await promisePool.query(
-            'INSERT INTO workers (name, phone, email, password, address, role) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-            [name, phone, email, hashedPassword, address || null, 'flw']
+            'INSERT INTO workers (name, phone, email, password, address, role, state, city, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
+            [name, phone, email, hashedPassword, address || null, 'flw', state || null, city || null, 'active']
         );
 
         // Get created worker
         const [workers] = await promisePool.query(
-            'SELECT id, name, phone, email, address, role, created_at FROM workers WHERE id = $1',
+            'SELECT id, name, phone, email, address, role, state, city, status, created_at FROM workers WHERE id = $1',
             [result[0].id]
         );
 
@@ -69,7 +69,7 @@ const registerFlw = async (req, res) => {
 const getAllFlws = async (req, res) => {
     try {
         const [workers] = await promisePool.query(
-            'SELECT id, name, phone, email, address, role, created_at FROM workers WHERE role = $1 ORDER BY created_at DESC',
+            'SELECT id, name, phone, email, address, role, state, city, status, created_at FROM workers WHERE role = $1 ORDER BY created_at DESC',
             ['flw']
         );
 
@@ -87,7 +87,50 @@ const getAllFlws = async (req, res) => {
     }
 };
 
+// @route   PUT /api/workers/update/:id
+// @desc    Update FLW details (including status)
+// @access  Private (Admin only)
+const updateFlw = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, phone, email, state, city, address, status } = req.body;
+
+        // Check if worker exists
+        const [existing] = await promisePool.query('SELECT id FROM workers WHERE id = $1 AND role = $2', [id, 'flw']);
+        if (existing.length === 0) {
+            return res.status(404).json({ success: false, message: 'Worker not found' });
+        }
+
+        // Update query
+        await promisePool.query(
+            `UPDATE workers 
+             SET name = $1, phone = $2, email = $3, state = $4, city = $5, address = $6, status = $7
+             WHERE id = $8`,
+            [name, phone, email, state, city, address, status, id]
+        );
+
+        // Get updated worker
+        const [updatedWorker] = await promisePool.query(
+            'SELECT id, name, phone, email, address, role, state, city, status, created_at FROM workers WHERE id = $1',
+            [id]
+        );
+
+        res.json({
+            success: true,
+            message: 'FLW updated successfully',
+            data: updatedWorker[0]
+        });
+    } catch (error) {
+        console.error('Update FLW error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error updating FLW'
+        });
+    }
+};
+
 module.exports = {
     registerFlw,
-    getAllFlws
+    getAllFlws,
+    updateFlw
 };

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registerFlw, getAllFlws } = require('../controllers/workerController');
+const { registerFlw, getAllFlws, updateFlw } = require('../controllers/workerController');
 const { authMiddleware } = require('../middleware/auth');
 
 // Protect all routes with auth and admin middleware
@@ -14,5 +14,6 @@ const checkAdmin = (req, res, next) => {
 
 router.post('/register', authMiddleware, checkAdmin, registerFlw);
 router.get('/list', authMiddleware, checkAdmin, getAllFlws);
+router.put('/update/:id', authMiddleware, checkAdmin, updateFlw);
 
 module.exports = router;

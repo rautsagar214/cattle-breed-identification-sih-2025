@@ -23,6 +23,7 @@ const MAPPING = {
   'person.fill': 'person',
   'plus': 'add',
   'camera.fill': 'camera-alt',
+  'clock.fill': 'history',
 } as IconMapping;
 
 /**

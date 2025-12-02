@@ -31,8 +31,10 @@ const initDatabase = async () => {
         name VARCHAR(255),
         phone VARCHAR(20),
         address VARCHAR(255),
-        role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-        is_verified BOOLEAN DEFAULT FALSE,
+        role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin', 'flw')),
+        state VARCHAR(100),
+        city VARCHAR(100),
+        status VARCHAR(20) DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

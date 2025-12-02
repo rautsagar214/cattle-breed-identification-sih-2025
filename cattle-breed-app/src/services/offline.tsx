@@ -1,24 +1,7 @@
-/**
- * 📡 Network & Offline Storage Manager
- * 
- * Handles offline/online detection and local data persistence
- * for the Cattle Breed App to work in areas with poor connectivity.
- * 
- * Features:
- * - Network connectivity detection
- * - Local data caching with AsyncStorage
- * - Queue system for pending uploads
- * - Automatic sync when connection returns
- */
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 // COMMENTED OUT: FileSystem not currently used in implementation
 import * as FileSystem from 'expo-file-system';
-
-// ==========================================
-// TypeScript Interfaces
-// ==========================================
 
 export interface OfflineResult {
   id: string;
@@ -46,10 +29,6 @@ export interface NetworkStatus {
   type: string;
 }
 
-// ==========================================
-// Storage Keys
-// ==========================================
-
 const STORAGE_KEYS = {
   OFFLINE_RESULTS: '@cattle_app:offline_results',
   PENDING_UPLOADS: '@cattle_app:pending_uploads',
@@ -57,14 +36,6 @@ const STORAGE_KEYS = {
   LAST_SYNC: '@cattle_app:last_sync',
 };
 
-// ==========================================
-// Network Detection
-// ==========================================
-
-/**
- * Check if device is currently online
- * @returns Promise with network status
- */
 export const checkNetworkStatus = async (): Promise<NetworkStatus> => {
   try {
     const state = await NetInfo.fetch();
@@ -83,11 +54,6 @@ export const checkNetworkStatus = async (): Promise<NetworkStatus> => {
   }
 };
 
-/**
- * Subscribe to network changes
- * @param callback Function to call when network status changes
- * @returns Unsubscribe function
- */
 export const subscribeToNetworkChanges = (
   callback: (status: NetworkStatus) => void
 ): (() => void) => {
@@ -102,17 +68,6 @@ export const subscribeToNetworkChanges = (
   return unsubscribe;
 };
 
-// ==========================================
-// Local Image Storage
-// ==========================================
-
-/**
- * Save image to local device storage (FileSystem)
- * 
- * @param imageUri Original image URI
- * @param userId User's ID
- * @returns Local file URI
- */
 export const saveImageLocally = async (
   imageUri: string,
   userId: string
@@ -136,10 +91,6 @@ export const saveImageLocally = async (
   }
 };
 
-/**
- * Delete local image from FileSystem
- * @param imageUri Local file URI
- */
 export const deleteLocalImage = async (imageUri: string): Promise<void> => {
   try {
     // Only delete if it's a file in our document directory
@@ -152,14 +103,6 @@ export const deleteLocalImage = async (imageUri: string): Promise<void> => {
   }
 };
 
-// ==========================================
-// Offline Results Storage
-// ==========================================
-
-/**
- * Save breed detection result locally (offline mode)
- * @param result Detection result
- */
 export const saveResultOffline = async (result: OfflineResult): Promise<void> => {
   try {
     // Get existing results

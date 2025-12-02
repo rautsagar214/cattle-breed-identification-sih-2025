@@ -16,12 +16,14 @@ import { useRouter } from 'expo-router';
 import { sendOtp, verifyOtp } from '../src/services/authService';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { useAuth } from '../src/contexts/AuthContext';
+import { useNetwork } from '../src/contexts/NetworkContext';
 import { ServiceHealthIndicator } from '../src/components/ServiceHealthIndicator';
 
 export default function LoginScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useLanguage();
   const { setUser, loginAsGuest } = useAuth();
+  const { isOnline } = useNetwork();
 
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [phone, setPhone] = useState('');
@@ -44,6 +46,11 @@ export default function LoginScreen(): React.JSX.Element {
   const handleSendOtp = async () => {
     if (!phone || phone.length !== 10) {
       Alert.alert('Invalid Phone', 'Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    if (!isOnline) {
+      Alert.alert('No Internet Connection', 'Please connect to the internet to login.');
       return;
     }
 
