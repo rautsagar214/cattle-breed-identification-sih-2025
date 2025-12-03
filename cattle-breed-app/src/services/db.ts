@@ -20,6 +20,10 @@ export interface ScanResult {
     latitude?: number;
     longitude?: number;
     locationName?: string;
+    isSynced: boolean;
+    dbId?: string;
+    userId?: string;
+    userRole?: string;
 }
 
 export const initDatabase = async () => {
@@ -33,7 +37,11 @@ export const initDatabase = async () => {
                 timestamp INTEGER NOT NULL,
                 latitude REAL,
                 longitude REAL,
-                location_name TEXT
+                location_name TEXT,
+                is_synced INTEGER DEFAULT 0,
+                db_id TEXT,
+                user_id TEXT,
+                user_role TEXT
             );
         `);
         console.log('✅ Database initialized');
@@ -48,7 +56,15 @@ export const initDatabase = async () => {
 const addLocationColumns = async () => {
     try {
         const database = await getDb();
-        const columns = ['latitude REAL', 'longitude REAL', 'location_name TEXT'];
+        const columns = [
+            'latitude REAL',
+            'longitude REAL',
+            'location_name TEXT',
+            'is_synced INTEGER DEFAULT 0',
+            'db_id TEXT',
+            'user_id TEXT',
+            'user_role TEXT'
+        ];
         for (const col of columns) {
             try {
                 await database.execAsync(`ALTER TABLE scan_history ADD COLUMN ${col};`);
@@ -65,7 +81,9 @@ const addLocationColumns = async () => {
 export const saveScanResult = async (
     imageUris: string[],
     predictions: { breed: string; confidence: number }[],
-    location?: { latitude: number; longitude: number; name?: string }
+    location?: { latitude: number; longitude: number; name?: string },
+    userId?: string,
+    userRole?: string
 ): Promise<void> => {
     try {
         const database = await getDb();
@@ -75,8 +93,8 @@ export const saveScanResult = async (
         const { latitude, longitude, name } = location || {};
 
         const result = await database.runAsync(
-            `INSERT INTO scan_history (image_uris, predictions, timestamp, latitude, longitude, location_name) VALUES (?, ?, ?, ?, ?, ?);`,
-            [imagesJson, predictionsJson, timestamp, latitude || null, longitude || null, name || null]
+            `INSERT INTO scan_history (image_uris, predictions, timestamp, latitude, longitude, location_name, is_synced, user_id, user_role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+            [imagesJson, predictionsJson, timestamp, latitude || null, longitude || null, name || null, 0, userId || null, userRole || null]
         );
         console.log('✅ Scan result saved:', result.lastInsertRowId);
     } catch (error) {
@@ -100,9 +118,53 @@ export const getScanHistory = async (): Promise<ScanResult[]> => {
             latitude: row.latitude,
             longitude: row.longitude,
             locationName: row.location_name,
+            isSynced: !!row.is_synced,
+            dbId: row.db_id,
+            userId: row.user_id,
+            userRole: row.user_role,
         }));
     } catch (error) {
         console.error('❌ Failed to get scan history:', error);
+        throw error;
+    }
+};
+
+export const markAsSynced = async (id: number, dbId: string): Promise<void> => {
+    try {
+        const database = await getDb();
+        await database.runAsync(
+            `UPDATE scan_history SET is_synced = 1, db_id = ? WHERE id = ?;`,
+            [dbId, id]
+        );
+        console.log(`✅ Marked scan ${id} as synced with dbId ${dbId}`);
+    } catch (error) {
+        console.error(`❌ Failed to mark scan ${id} as synced:`, error);
+        throw error;
+    }
+};
+
+export const getUnsyncedScans = async (): Promise<ScanResult[]> => {
+    try {
+        const database = await getDb();
+        const rows = await database.getAllAsync<any>(
+            `SELECT * FROM scan_history WHERE is_synced = 0 ORDER BY timestamp ASC;`
+        );
+
+        return rows.map(row => ({
+            id: row.id,
+            imageUris: JSON.parse(row.image_uris),
+            predictions: JSON.parse(row.predictions),
+            timestamp: row.timestamp,
+            latitude: row.latitude,
+            longitude: row.longitude,
+            locationName: row.location_name,
+            isSynced: !!row.is_synced,
+            dbId: row.db_id,
+            userId: row.user_id,
+            userRole: row.user_role,
+        }));
+    } catch (error) {
+        console.error('❌ Failed to get unsynced scans:', error);
         throw error;
     }
 };

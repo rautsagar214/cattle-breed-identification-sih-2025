@@ -5,6 +5,7 @@ const { testConnection } = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const workerRoutes = require('./routes/workerRoutes');
+const historyRoutes = require('./routes/historyRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -13,8 +14,8 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -47,6 +48,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/workers', workerRoutes);
+app.use('/api/history', historyRoutes);
 
 // 404 handler
 app.use((req, res) => {

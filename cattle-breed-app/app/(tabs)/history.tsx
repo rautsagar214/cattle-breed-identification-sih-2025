@@ -13,6 +13,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { getScanHistory, ScanResult } from '../../src/services/db';
+import { setupSyncListener } from '../../src/services/SyncService';
 
 export default function HistoryScreen() {
     const router = useRouter();
@@ -41,6 +42,22 @@ export default function HistoryScreen() {
     useFocusEffect(
         useCallback(() => {
             loadHistory();
+
+            // Setup sync listener when screen is focused
+            const unsubscribe = setupSyncListener();
+
+            // Also refresh history periodically to check for sync updates if we are online
+            // Or better, just reload history when focus returns or user pulls to refresh.
+            // But if sync happens in background while on this screen, we want to see it update.
+            // We can add a listener to DB changes or just poll. 
+            // For simplicity, let's just rely on pull-to-refresh or re-focus for now, 
+            // but since we have the sync listener here, we can trigger a reload after some time or if we had a way to know sync finished.
+            // The SyncService logs to console. 
+            // Let's just keep it simple: user refreshes to see updated status.
+
+            return () => {
+                unsubscribe();
+            };
         }, [])
     );
 
@@ -111,6 +128,15 @@ export default function HistoryScreen() {
                             📍 {item.locationName}
                         </Text>
                     )}
+
+                    <View style={styles.syncContainer}>
+                        <Text style={[
+                            styles.syncStatus,
+                            item.isSynced ? styles.synced : styles.notSynced
+                        ]}>
+                            {item.isSynced ? '☁️ Synced' : '⏳ Pending Sync'}
+                        </Text>
+                    </View>
                 </View>
             </TouchableOpacity>
         );
@@ -247,6 +273,21 @@ const styles = StyleSheet.create({
     location: {
         fontSize: 12,
         color: '#7f8c8d',
+    },
+    syncContainer: {
+        marginTop: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    syncStatus: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    synced: {
+        color: '#27ae60',
+    },
+    notSynced: {
+        color: '#f39c12',
     },
     emptyContainer: {
         flex: 1,

@@ -47,6 +47,24 @@ const initDatabase = async () => {
     await client.query(createWorkersTable);
     console.log('✅ Workers table created/verified');
 
+    // Create prediction_runs table
+    const createPredictionRunsTable = `
+      CREATE TABLE IF NOT EXISTS prediction_runs (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES workers(id),
+        user_role VARCHAR(20),
+        image_url TEXT NOT NULL,
+        predictions JSONB NOT NULL,
+        latitude REAL,
+        longitude REAL,
+        location_name TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    await client.query(createPredictionRunsTable);
+    console.log('✅ Prediction runs table created/verified');
+
     console.log('🎉 Database initialization completed successfully!');
 
   } catch (error) {
