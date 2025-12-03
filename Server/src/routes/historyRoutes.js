@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const historyController = require('../controllers/historyController');
-const { protect } = require('../middleware/authMiddleware');
 
 // Using protect middleware to ensure only authenticated users can sync? 
 // The requirement says "user/flw role comes online", implying they might be logged in.
