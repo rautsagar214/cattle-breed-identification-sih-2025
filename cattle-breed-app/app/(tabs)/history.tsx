@@ -23,7 +23,7 @@ export default function HistoryScreen() {
     const [refreshing, setRefreshing] = useState(false);
 
     const loadHistory = async () => {
-        if (!user) {
+        if (user?.id === -1) {
             setLoading(false);
             return;
         }
@@ -124,7 +124,7 @@ export default function HistoryScreen() {
         );
     }
 
-    if (!user) {
+    if (user?.id === -1) {
         return (
             <View style={styles.container}>
                 <View style={styles.header}>

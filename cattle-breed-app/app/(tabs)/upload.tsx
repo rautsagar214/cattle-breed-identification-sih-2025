@@ -154,7 +154,7 @@ export default function UploadScreen(): React.JSX.Element {
         }
 
         // Guest check removed to allow analysis without login
-        // if (!user) { ... }
+        // if (user?.id === -1) { ... }
 
         setIsAnalyzing(true);
         try {
@@ -192,57 +192,65 @@ export default function UploadScreen(): React.JSX.Element {
 
             setDetectionResult(breedData);
 
-            // Save images to permanent storage
+            setDetectionResult(breedData);
+
+            // Save images to permanent storage (ONLY FOR LOGGED IN USERS)
             const permanentImageUris: string[] = [];
-            try {
-                for (const uri of selectedImages) {
-                    const savedUri = await saveImageLocally(uri, user?.id || 'guest');
-                    permanentImageUris.push(savedUri);
+
+            if (user?.id !== -1) {
+                try {
+                    for (const uri of selectedImages) {
+                        const savedUri = await saveImageLocally(uri, String(user?.id));
+                        permanentImageUris.push(savedUri);
+                    }
+                } catch (saveError) {
+                    console.error('Failed to save images locally:', saveError);
+                    // Fallback to original URIs if saving fails
+                    permanentImageUris.push(...selectedImages);
                 }
-            } catch (saveError) {
-                console.error('Failed to save images locally:', saveError);
-                // Fallback to original URIs if saving fails
-                permanentImageUris.push(...selectedImages);
-            }
 
-            // Save to SQLite DB
-            try {
-                // Fetch location
-                let locationData = undefined;
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status === 'granted') {
-                    const location = await Location.getCurrentPositionAsync({});
-                    let locationName = undefined;
+                // Save to SQLite DB (ONLY FOR LOGGED IN USERS)
+                try {
+                    // Fetch location
+                    let locationData = undefined;
+                    const { status } = await Location.requestForegroundPermissionsAsync();
+                    if (status === 'granted') {
+                        const location = await Location.getCurrentPositionAsync({});
+                        let locationName = undefined;
 
-                    // Reverse geocode
-                    try {
-                        const address = await Location.reverseGeocodeAsync({
-                            latitude: location.coords.latitude,
-                            longitude: location.coords.longitude
-                        });
-                        if (address && address.length > 0) {
-                            const addr = address[0];
-                            locationName = `${addr.city || ''}, ${addr.region || ''}, ${addr.country || ''}`.replace(/^, /, '').replace(/, $/, '');
+                        // Reverse geocode
+                        try {
+                            const address = await Location.reverseGeocodeAsync({
+                                latitude: location.coords.latitude,
+                                longitude: location.coords.longitude
+                            });
+                            if (address && address.length > 0) {
+                                const addr = address[0];
+                                locationName = `${addr.city || ''}, ${addr.region || ''}, ${addr.country || ''}`.replace(/^, /, '').replace(/, $/, '');
+                            }
+                        } catch (geoError) {
+                            console.log('Reverse geocoding failed:', geoError);
                         }
-                    } catch (geoError) {
-                        console.log('Reverse geocoding failed:', geoError);
+
+                        locationData = {
+                            latitude: location.coords.latitude,
+                            longitude: location.coords.longitude,
+                            name: locationName
+                        };
                     }
 
-                    locationData = {
-                        latitude: location.coords.latitude,
-                        longitude: location.coords.longitude,
-                        name: locationName
-                    };
+                    await saveScanResult(
+                        permanentImageUris,
+                        analysisResult.allPredictions.slice(0, 3),
+                        locationData
+                    );
+                    console.log('💾 Result saved to history DB with location');
+                } catch (dbError) {
+                    console.error('Failed to save to DB:', dbError);
                 }
-
-                await saveScanResult(
-                    permanentImageUris,
-                    analysisResult.allPredictions.slice(0, 3),
-                    locationData
-                );
-                console.log('💾 Result saved to history DB with location');
-            } catch (dbError) {
-                console.error('Failed to save to DB:', dbError);
+            } else {
+                // Guest: Use temporary URIs
+                permanentImageUris.push(...selectedImages);
             }
 
             // Navigate directly to result screen with params
@@ -258,6 +266,7 @@ export default function UploadScreen(): React.JSX.Element {
                     characteristics: JSON.stringify(analysisResult.characteristics),
                     careTips: JSON.stringify(analysisResult.careTips),
                     description: breedData.description || `${analysisResult.breedName} cattle breed detected`,
+                    isGuest: user?.id === -1 ? 'true' : 'false', // Pass guest status
                 }
             } as any);
 
@@ -272,7 +281,11 @@ export default function UploadScreen(): React.JSX.Element {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView
+            style={styles.container}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+        >
             <View style={styles.content}>
                 {/* Header */}
                 <View style={styles.header}>
@@ -362,6 +375,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+    },
+    scrollContent: {
+        flexGrow: 1,
+        paddingBottom: 120, // Extra padding for bottom tab bar
     },
     content: {
         padding: 20,
@@ -521,6 +538,7 @@ const styles = StyleSheet.create({
     // Removed old guidance styles
     gridContainer: {
         flexDirection: 'row',
+        justifyContent: 'center',
         flexWrap: 'wrap',
         gap: 10,
         marginBottom: 20,

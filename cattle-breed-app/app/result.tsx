@@ -31,6 +31,7 @@ interface BreedResult {
   locationName?: string;
   latitude?: number;
   longitude?: number;
+  isGuest?: boolean;
 }
 
 const { width } = Dimensions.get('window');
@@ -53,6 +54,7 @@ function ResultScreen(): React.JSX.Element {
     locationName: undefined,
     latitude: undefined,
     longitude: undefined,
+    isGuest: false,
   });
 
   const [activeSlide, setActiveSlide] = useState(0);
@@ -76,6 +78,7 @@ function ResultScreen(): React.JSX.Element {
           locationName: params.locationName as string,
           latitude: params.latitude ? Number(params.latitude) : undefined,
           longitude: params.longitude ? Number(params.longitude) : undefined,
+          isGuest: params.isGuest === 'true',
         });
       } catch (e) {
         console.error('Error parsing params:', e);
@@ -100,6 +103,7 @@ function ResultScreen(): React.JSX.Element {
     locationName: originalResult.locationName,
     latitude: originalResult.latitude,
     longitude: originalResult.longitude,
+    isGuest: originalResult.isGuest,
   }), [originalResult]);
 
   // Show loading state AFTER all hooks are called
@@ -120,6 +124,7 @@ function ResultScreen(): React.JSX.Element {
     characteristics: displayData.characteristics,
     careTips: displayData.careTips,
     allPredictions: displayData.allPredictions,
+    isGuest: displayData.isGuest,
   };
 
   return (
@@ -192,8 +197,8 @@ function ResultScreen(): React.JSX.Element {
             {displayData.description}
           </Text>
 
-          {/* Location and Date Info */}
-          {(result.timestamp || result.locationName) && (
+          {/* Location and Date Info (HIDDEN FOR GUESTS) */}
+          {!result.isGuest && (result.timestamp || result.locationName) && (
             <View style={styles.metaInfoContainer}>
               {result.timestamp && (
                 <Text style={styles.metaText}>
@@ -214,8 +219,24 @@ function ResultScreen(): React.JSX.Element {
           )}
         </View>
 
-        {/* Top Matches */}
-        {result.allPredictions && result.allPredictions.length > 0 && (
+        {/* GUEST MESSAGE */}
+        {result.isGuest && (
+          <View style={styles.guestMessageContainer}>
+            <Text style={styles.guestMessageTitle}>🔒 Detailed Report Locked</Text>
+            <Text style={styles.guestMessageText}>
+              Log in to view top matches, characteristics, care tips, and save your scan history.
+            </Text>
+            <TouchableOpacity
+              style={styles.loginButton}
+              onPress={() => router.push('/' as any)}
+            >
+              <Text style={styles.loginButtonText}>Log In Now</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Top Matches (HIDDEN FOR GUESTS) */}
+        {!result.isGuest && result.allPredictions && result.allPredictions.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>🏆 Top Matches</Text>
             <View style={styles.card}>
@@ -239,31 +260,35 @@ function ResultScreen(): React.JSX.Element {
           </View>
         )}
 
-        {/* Characteristics */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 Key Characteristics</Text>
-          <View style={styles.card}>
-            {result.characteristics.map((char, index) => (
-              <View key={index} style={styles.listItem}>
-                <Text style={styles.bullet}>•</Text>
-                <Text style={styles.listText}>{char}</Text>
-              </View>
-            ))}
+        {/* Characteristics (HIDDEN FOR GUESTS) */}
+        {!result.isGuest && result.characteristics.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📋 Key Characteristics</Text>
+            <View style={styles.card}>
+              {result.characteristics.map((char, index) => (
+                <View key={index} style={styles.listItem}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={styles.listText}>{char}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
-        {/* Care Tips */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💚 Care Tips</Text>
-          <View style={styles.card}>
-            {result.careTips.map((tip, index) => (
-              <View key={index} style={styles.listItem}>
-                <Text style={styles.bullet}>✓</Text>
-                <Text style={styles.listText}>{tip}</Text>
-              </View>
-            ))}
+        {/* Care Tips (HIDDEN FOR GUESTS) */}
+        {!result.isGuest && result.careTips.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>💚 Care Tips</Text>
+            <View style={styles.card}>
+              {result.careTips.map((tip, index) => (
+                <View key={index} style={styles.listItem}>
+                  <Text style={styles.bullet}>✓</Text>
+                  <Text style={styles.listText}>{tip}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
@@ -554,6 +579,38 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: 4,
+  },
+  guestMessageContainer: {
+    backgroundColor: '#fff3cd',
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ffc107',
+  },
+  guestMessageTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  guestMessageText: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+    marginBottom: 15,
+    lineHeight: 20,
+  },
+  loginButton: {
+    backgroundColor: '#3498db',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  loginButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

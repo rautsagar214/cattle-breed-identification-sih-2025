@@ -42,7 +42,7 @@ const Dashboard = () => {
 
     // Search & Filter States
     const [searchQuery, setSearchQuery] = useState('');
-    const [filters, setFilters] = useState({ state: '', city: '', status: '' });
+    const [filters, setFilters] = useState({ state: '', city: '', status: 'active' });
     const [showFilters, setShowFilters] = useState(false);
 
     // Edit State

@@ -1,94 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
 import Animated, {
     useSharedValue,
     useAnimatedStyle,
-    withRepeat,
     withTiming,
-    withSequence,
     Easing,
     withDelay,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-// Animation Specs
-const CYCLE_DURATION = 4000; // 4 seconds per step
-const OSCILLATION_DURATION = 1000; // 1 second for full cycle (50ms updates * 20 steps approx, smoothed)
-// Actually user said: "Frequency: Updates every 50ms, moves 2px per update" -> This implies a linear step-by-step, 
-// but "100ms CSS transition" implies smooth. I will use smooth sine wave oscillation for better visual quality 
-// matching the "pulsing" description.
+// Import Images
+const cowImages = [
+    require('../../assets/images/_2.png'),
+    require('../../assets/images/_1.png'),
+    require('../../assets/images/_3.png'),
+];
+// Assuming _4.png is the hands holding phone image
+const handsImage = require('../../assets/images/_4.png');
 
 export const GuidanceAnimation = ({ step = 0 }: { step?: number }) => {
-    // Shared Values for Arrow/Camera Position
-    const arrowTranslateX = useSharedValue(0);
-    const arrowTranslateY = useSharedValue(0);
-    const rotation = useSharedValue(0);
+    // Shared Value for Hands Position (Vertical Slide)
+    const handsTranslateY = useSharedValue(300); // Start off-screen (down)
 
-    // Continuous Oscillation Animation
+    // Animation Logic
     useEffect(() => {
-        // Reset
-        arrowTranslateX.value = 0;
-        arrowTranslateY.value = 0;
+        // Reset to bottom first
+        handsTranslateY.value = 300;
 
-        const distance = 15; // Reduced movement slightly for smaller canvas
-        const duration = 1000; // 1 second per pulse cycle
+        // Animate sliding up to center
+        // Target Y: 0 puts it at the bottom of the container (defined by styles)
+        // To move it "up till center", we might want a slight negative value or just 0 if the container is positioned well.
+        // Let's aim for a position where the phone is clearly visible.
 
-        if (step === 0) {
-            // Step 1: Horizontal (Side View)
-            rotation.value = 0;
-            arrowTranslateX.value = withRepeat(
-                withSequence(
-                    withTiming(-distance, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0, { duration: duration / 2, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1, // Infinite
-                true // Reverse
-            );
-        } else if (step === 1) {
-            // Step 2: Vertical (Front View)
-            rotation.value = 270;
-            arrowTranslateY.value = withRepeat(
-                withSequence(
-                    withTiming(distance, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0, { duration: duration / 2, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-        } else if (step === 2) {
-            // Step 3: Diagonal (45 Degree)
-            rotation.value = 320;
-            // Move both X and Y
-            const diagDist = distance * 0.7;
-            arrowTranslateX.value = withRepeat(
-                withSequence(
-                    withTiming(diagDist, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0, { duration: duration / 2, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
-            arrowTranslateY.value = withRepeat(
-                withSequence(
-                    withTiming(-diagDist, { duration: duration / 2, easing: Easing.inOut(Easing.ease) }),
-                    withTiming(0, { duration: duration / 2, easing: Easing.inOut(Easing.ease) })
-                ),
-                -1,
-                true
-            );
+        let targetY = 0;
+        if (step === 1 || step === 2) {
+            targetY = -1; // Move up a bit more for Front and Angle views
         }
+
+        handsTranslateY.value = withDelay(
+            100,
+            withTiming(targetY, {
+                duration: 1000,
+                easing: Easing.out(Easing.cubic),
+            })
+        );
+
     }, [step]);
 
     // Animated Styles
-    const arrowStyle = useAnimatedStyle(() => {
+    const handsStyle = useAnimatedStyle(() => {
         return {
             transform: [
-                { translateX: arrowTranslateX.value },
-                { translateY: arrowTranslateY.value },
-                { rotate: `${rotation.value}deg` },
+                { translateY: handsTranslateY.value },
             ],
         };
     });
@@ -113,52 +78,33 @@ export const GuidanceAnimation = ({ step = 0 }: { step?: number }) => {
     ];
 
     const currentStep = steps[step] || steps[0];
+    const currentCowImage = cowImages[step] || cowImages[0];
 
     return (
         <View style={styles.wrapper}>
             {/* Main Animation Canvas */}
             <View style={styles.canvas}>
 
-                {/* Central Cattle Subject */}
-                <View style={styles.cattleContainer}>
+                {/* Full Container Cow Background */}
+                <Image
+                    source={currentCowImage}
+                    style={styles.cowBackground}
+                    resizeMode="cover"
+                />
 
-                    <Image
-                        source={require('../../assets/images/cowimage.png')}
-                        style={styles.cattleImage}
-                        resizeMode="cover"
-                    />
-
-                </View>
-
-                {/* Camera Icon */}
-                <View style={[
-                    styles.cameraBadge,
-                    { backgroundColor: currentStep.color },
-                    step === 0 ? { left: 40, top: '20%' } : // Side: Right, vertically centered
-                        step === 1 ? { bottom: 30, left: '45%', marginLeft: -20 } : // Front: Top, horizontally centered
-                            { bottom: 100, left: '18%' } // Angle: Bottom-Right
-                ]}>
-                    <Ionicons name="camera" size={20} color="white" />
-                </View>
-
-                {/* Animated Arrow */}
-                <Animated.View style={[
-                    styles.arrowContainer,
-                    arrowStyle,
-                    step === 0 ? { left: 20, top: '38%' } : // Side -> Point Left
-                        step === 1 ? { bottom: 30, left: '41%' } : // Front -> Point Down
-                            { bottom: 65, left: 34 } // Angle -> Point Top-Left
-                ]}>
-                    {/* Arrow Shaft */}
-                    <View style={[styles.arrowShaft, { backgroundColor: currentStep.color }]} />
-                    {/* Arrow Head */}
-                    <View style={[styles.arrowHead, { borderLeftColor: currentStep.color }]} />
-                </Animated.View>
-
-                {/* Step Indicator Badge (Inside Canvas) */}
-                <View style={styles.stepBadge}>
+                {/* Step Badge (Top Corner) */}
+                <View style={[styles.stepBadge, { backgroundColor: currentStep.color }]}>
                     <Text style={styles.stepText}>{currentStep.label}</Text>
                 </View>
+
+                {/* Hands Holding Phone Overlay */}
+                <Animated.View style={[styles.handsContainer, handsStyle]}>
+                    <Image
+                        source={handsImage}
+                        style={styles.handsImage}
+                        resizeMode="contain"
+                    />
+                </Animated.View>
 
             </View>
         </View>
@@ -168,83 +114,61 @@ export const GuidanceAnimation = ({ step = 0 }: { step?: number }) => {
 const styles = StyleSheet.create({
     wrapper: {
         marginBottom: 20,
+        width: '100%',
+        alignItems: 'center'
     },
     canvas: {
-        height: 280, // Reduced from 384
-        // backgroundColor: '#1e293b', // slate-800
-        borderRadius: 16,
-        padding: 20,
+        width: width - 40, // Full width minus padding
+        height: 280, // Reduced height as requested
+        borderRadius: 20,
+        backgroundColor: '#f1f5f9',
+        overflow: 'hidden',
         position: 'relative',
-        alignItems: 'center',
-        justifyContent: 'center',
-        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 5,
     },
-    cattleContainer: {
-        zIndex: 10,
-        width: 100, // Reduced from 140
-        height: 200,
-        overflow: 'hidden',
-        marginTop: -60,
-    },
-    cattleImage: {
+    cowBackground: {
         width: '100%',
         height: '100%',
-    },
-    cameraBadge: {
         position: 'absolute',
-        width: 40, // Reduced from 48
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
-        justifyContent: 'center',
+        top: 0,
+        left: 0,
+    },
+    stepBadge: {
+        position: 'absolute',
+        top: 16,
+        right: 16,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
         zIndex: 20,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    arrowContainer: {
-        position: 'absolute',
-        flexDirection: 'row',
-        alignItems: 'center',
-        width: 100, // Reduced from 120
-        height: 20, // Hitbox
-        zIndex: 15,
-    },
-    arrowShaft: {
-        flex: 1,
-        height: 4,
-        borderRadius: 2,
-    },
-    arrowHead: {
-        width: 0,
-        height: 0,
-        backgroundColor: 'transparent',
-        borderStyle: 'solid',
-        borderLeftWidth: 12, // Reduced
-        borderRightWidth: 0,
-        borderBottomWidth: 8,
-        borderTopWidth: 8,
-        borderLeftColor: 'black', // Overridden dynamically
-        borderBottomColor: 'transparent',
-        borderTopColor: 'transparent',
-        marginLeft: -2, // Overlap slightly
-    },
-    stepBadge: {
-        position: 'absolute',
-        bottom: 15,
-        right: 0,
-        backgroundColor: 'rgba(51, 65, 85, 0.9)', // slate-700 with opacity
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#475569', // slate-600
+        shadowRadius: 3,
+        elevation: 3,
     },
     stepText: {
         color: 'white',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: 'bold',
+        textTransform: 'uppercase',
+    },
+    handsContainer: {
+        position: 'absolute',
+        bottom: 0, // Align to bottom
+        left: 0,
+        right: 0,
+        height: 220, // Slightly reduced to fit better in 300px container
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        zIndex: 10,
+    },
+    handsImage: {
+        width: '100%', // Increased width for better visibility
+        height: '100%',
     },
 });
