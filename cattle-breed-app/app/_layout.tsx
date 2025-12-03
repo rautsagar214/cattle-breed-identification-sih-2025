@@ -11,10 +11,15 @@ import { NetworkProvider } from '../src/contexts/NetworkContext';
 import { LanguageProvider } from '../src/contexts/LanguageContext';
 import { useRouter, useSegments } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as SplashScreen from 'expo-splash-screen';
+import { setupSyncListener } from '../src/services/SyncService';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
@@ -30,6 +35,14 @@ function RootLayoutContent() {
         console.log('Media library permission denied on start');
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    // Setup global sync listener
+    const unsubscribe = setupSyncListener();
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -59,6 +72,7 @@ function RootLayoutContent() {
         <Stack.Screen name="result" options={{ headerShown: false, title: 'Results' }} />
         <Stack.Screen name="settings" options={{ headerShown: false, title: 'Settings' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="register" options={{ headerShown: false, title: 'Register Cattle' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

@@ -12,14 +12,15 @@ import {
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { getScanHistory, ScanResult } from '../../src/services/db';
-import { setupSyncListener } from '../../src/services/SyncService';
+import { getScanHistory, getRegistrations, ScanResult, Registration } from '../../src/services/db';
 
 export default function HistoryScreen() {
     const router = useRouter();
     const { t } = useLanguage();
     const { user } = useAuth();
     const [history, setHistory] = useState<ScanResult[]>([]);
+    const [registrations, setRegistrations] = useState<Registration[]>([]);
+    const [activeTab, setActiveTab] = useState<'predictions' | 'registrations'>('predictions');
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -31,6 +32,11 @@ export default function HistoryScreen() {
         try {
             const data = await getScanHistory();
             setHistory(data);
+
+            if (user?.role === 'flw') {
+                const regData = await getRegistrations();
+                setRegistrations(regData);
+            }
         } catch (error) {
             console.error('Failed to load history:', error);
         } finally {
@@ -42,22 +48,6 @@ export default function HistoryScreen() {
     useFocusEffect(
         useCallback(() => {
             loadHistory();
-
-            // Setup sync listener when screen is focused
-            const unsubscribe = setupSyncListener();
-
-            // Also refresh history periodically to check for sync updates if we are online
-            // Or better, just reload history when focus returns or user pulls to refresh.
-            // But if sync happens in background while on this screen, we want to see it update.
-            // We can add a listener to DB changes or just poll. 
-            // For simplicity, let's just rely on pull-to-refresh or re-focus for now, 
-            // but since we have the sync listener here, we can trigger a reload after some time or if we had a way to know sync finished.
-            // The SyncService logs to console. 
-            // Let's just keep it simple: user refreshes to see updated status.
-
-            return () => {
-                unsubscribe();
-            };
         }, [])
     );
 
@@ -142,6 +132,40 @@ export default function HistoryScreen() {
         );
     };
 
+    const renderRegistrationItem = ({ item }: { item: Registration }) => {
+        const mainImage = item.imageUris[0];
+
+        return (
+            <View style={styles.card}>
+                <Image source={{ uri: mainImage }} style={styles.thumbnail} />
+                <View style={styles.cardContent}>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.breedName}>{item.pashuAadharTagId}</Text>
+                        <Text style={styles.confidence}>{item.breed}</Text>
+                    </View>
+
+                    <Text style={styles.date}>{formatDate(item.timestamp)}</Text>
+                    <Text style={styles.location}>{item.ownerName}</Text>
+
+                    {item.locationName && (
+                        <Text style={styles.location} numberOfLines={1}>
+                            📍 {item.locationName}
+                        </Text>
+                    )}
+
+                    <View style={styles.syncContainer}>
+                        <Text style={[
+                            styles.syncStatus,
+                            item.isSynced ? styles.synced : styles.notSynced
+                        ]}>
+                            {item.isSynced ? '☁️ Synced' : '⏳ Pending Sync'}
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        );
+    };
+
     if (loading) {
         return (
             <View style={styles.centerContainer}>
@@ -174,24 +198,60 @@ export default function HistoryScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Scan History</Text>
+                <Text style={styles.title}>History</Text>
             </View>
 
-            {history.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>No scans yet</Text>
-                    <Text style={styles.emptySubtext}>Your identification history will appear here</Text>
+            {user?.role === 'flw' && (
+                <View style={styles.tabContainer}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'predictions' && styles.activeTab]}
+                        onPress={() => setActiveTab('predictions')}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'predictions' && styles.activeTabText]}>Predictions</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'registrations' && styles.activeTab]}
+                        onPress={() => setActiveTab('registrations')}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'registrations' && styles.activeTabText]}>Registrations</Text>
+                    </TouchableOpacity>
                 </View>
+            )}
+
+            {activeTab === 'predictions' ? (
+                history.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No scans yet</Text>
+                        <Text style={styles.emptySubtext}>Your identification history will appear here</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={history}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                        contentContainerStyle={styles.listContent}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                        }
+                    />
+                )
             ) : (
-                <FlatList
-                    data={history}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
-                    contentContainerStyle={styles.listContent}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                />
+                registrations.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>No registrations yet</Text>
+                        <Text style={styles.emptySubtext}>Your cattle registrations will appear here</Text>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={registrations}
+                        renderItem={renderRegistrationItem}
+                        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                        contentContainerStyle={styles.listContent}
+                        refreshControl={
+                            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                        }
+                    />
+                )
             )}
         </View>
     );
@@ -326,5 +386,30 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        paddingHorizontal: 20,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    tab: {
+        marginRight: 20,
+        paddingVertical: 8,
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
+    },
+    activeTab: {
+        borderBottomColor: '#3498db',
+    },
+    tabText: {
+        fontSize: 16,
+        color: '#95a5a6',
+        fontWeight: '600',
+    },
+    activeTabText: {
+        color: '#3498db',
     },
 });

@@ -26,6 +26,29 @@ exports.syncHistory = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Missing required fields or invalid images format' });
         }
 
+        client = await getDbClient();
+        const createdAt = timestamp ? new Date(timestamp) : new Date();
+
+        // Idempotency Check: Check if record already exists for this user at this timestamp
+        // We do this BEFORE uploading images to save bandwidth/storage
+        const checkQuery = `
+            SELECT id, image_urls FROM prediction_runs 
+            WHERE user_id = $1 AND created_at = $2
+        `;
+        const checkResult = await client.query(checkQuery, [userId || null, createdAt]);
+
+        if (checkResult.rows.length > 0) {
+            console.log(`Duplicate scan detected for user ${userId} at ${createdAt}. Returning existing ID.`);
+            return res.status(200).json({
+                success: true,
+                data: {
+                    dbId: checkResult.rows[0].id,
+                    imageUrls: checkResult.rows[0].image_urls,
+                    syncedAt: new Date().toISOString()
+                }
+            });
+        }
+
         // 1. Upload images to ImageKit
         const uploadPromises = imagesBase64.map(base64 =>
             imagekit.upload({
@@ -39,15 +62,13 @@ exports.syncHistory = async (req, res) => {
         const imageUrls = uploadResponses.map(response => response.url);
 
         // 2. Save to Database
-        client = await getDbClient();
         const query = `
-            INSERT INTO prediction_runs (user_id, user_role, image_urls, predictions, latitude, longitude, location_name, created_at)
+            INSERT INTO prediction_runs (
+                user_id, user_role, image_urls, predictions, latitude, longitude, location_name, created_at
+            )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id;
         `;
-
-        // Convert timestamp to Date object if provided, else use current time
-        const createdAt = timestamp ? new Date(timestamp) : new Date();
 
         const values = [
             userId || null,

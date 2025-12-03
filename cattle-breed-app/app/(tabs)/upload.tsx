@@ -242,7 +242,9 @@ export default function UploadScreen(): React.JSX.Element {
                     await saveScanResult(
                         permanentImageUris,
                         analysisResult.allPredictions.slice(0, 3),
-                        locationData
+                        locationData,
+                        user?.id?.toString(),
+                        user?.role
                     );
                     console.log('💾 Result saved to history DB with location');
                 } catch (dbError) {

@@ -26,6 +26,39 @@ export interface ScanResult {
     userRole?: string;
 }
 
+export interface Registration {
+    id?: number;
+    pashuAadharTagId: string;
+    species: string;
+    breed: string;
+    isBreedOverridden: boolean;
+    overrideReason?: string;
+    phenotypicCharacteristics?: string;
+    identificationMarks?: string;
+    sex: string;
+    ageYears: string;
+    ageMonths: string;
+    reproductiveBreedingHistory?: string;
+    healthVaccinationRecords?: string;
+    milkYieldInfo?: string;
+    birthDeathRegistrationInfo?: string;
+    ownerName: string;
+    ownerAddress: string;
+    ownerContact: string;
+    premisesType?: string;
+    premisesLocation?: string;
+    imageUris: string[];
+    predictions: { breed: string; confidence: number }[];
+    latitude?: number;
+    longitude?: number;
+    locationName?: string;
+    timestamp: number;
+    userId?: string;
+    userRole?: string;
+    isSynced: boolean;
+    dbId?: string;
+}
+
 export const initDatabase = async () => {
     try {
         const database = await getDb();
@@ -42,6 +75,39 @@ export const initDatabase = async () => {
                 db_id TEXT,
                 user_id TEXT,
                 user_role TEXT
+            );
+            
+            CREATE TABLE IF NOT EXISTS cattle_registrations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                pashu_aadhar_tag_id TEXT,
+                species TEXT,
+                breed TEXT,
+                is_breed_overridden INTEGER DEFAULT 0,
+                override_reason TEXT,
+                phenotypic_characteristics TEXT,
+                identification_marks TEXT,
+                sex TEXT,
+                age_years TEXT,
+                age_months TEXT,
+                reproductive_breeding_history TEXT,
+                health_vaccination_records TEXT,
+                milk_yield_info TEXT,
+                birth_death_registration_info TEXT,
+                owner_name TEXT,
+                owner_address TEXT,
+                owner_contact TEXT,
+                premises_type TEXT,
+                premises_location TEXT,
+                image_uris TEXT NOT NULL,
+                predictions TEXT NOT NULL,
+                latitude REAL,
+                longitude REAL,
+                location_name TEXT,
+                timestamp INTEGER NOT NULL,
+                user_id TEXT,
+                user_role TEXT,
+                is_synced INTEGER DEFAULT 0,
+                db_id TEXT
             );
         `);
         console.log('✅ Database initialized');
@@ -168,3 +234,109 @@ export const getUnsyncedScans = async (): Promise<ScanResult[]> => {
         throw error;
     }
 };
+
+export const saveRegistration = async (registration: Registration): Promise<void> => {
+    try {
+        const database = await getDb();
+        const imagesJson = JSON.stringify(registration.imageUris);
+        const predictionsJson = JSON.stringify(registration.predictions);
+
+        const result = await database.runAsync(
+            `INSERT INTO cattle_registrations (
+                pashu_aadhar_tag_id, species, breed, is_breed_overridden, override_reason,
+                phenotypic_characteristics, identification_marks, sex, age_years, age_months,
+                reproductive_breeding_history, health_vaccination_records, milk_yield_info, birth_death_registration_info,
+                owner_name, owner_address, owner_contact, premises_type, premises_location,
+                image_uris, predictions, latitude, longitude, location_name, timestamp,
+                user_id, user_role, is_synced
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);`,
+            [
+                registration.pashuAadharTagId, registration.species, registration.breed, registration.isBreedOverridden ? 1 : 0, registration.overrideReason || null,
+                registration.phenotypicCharacteristics || null, registration.identificationMarks || null, registration.sex, registration.ageYears, registration.ageMonths,
+                registration.reproductiveBreedingHistory || null, registration.healthVaccinationRecords || null, registration.milkYieldInfo || null, registration.birthDeathRegistrationInfo || null,
+                registration.ownerName, registration.ownerAddress, registration.ownerContact, registration.premisesType || null, registration.premisesLocation || null,
+                imagesJson, predictionsJson, registration.latitude || null, registration.longitude || null, registration.locationName || null, registration.timestamp,
+                registration.userId || null, registration.userRole || null
+            ]
+        );
+        console.log('✅ Registration saved:', result.lastInsertRowId);
+    } catch (error) {
+        console.error('❌ Failed to save registration:', error);
+        throw error;
+    }
+};
+
+export const getRegistrations = async (): Promise<Registration[]> => {
+    try {
+        const database = await getDb();
+        const rows = await database.getAllAsync<any>(
+            `SELECT * FROM cattle_registrations ORDER BY timestamp DESC;`
+        );
+
+        return rows.map(row => mapRowToRegistration(row));
+    } catch (error) {
+        console.error('❌ Failed to get registrations:', error);
+        throw error;
+    }
+};
+
+export const getUnsyncedRegistrations = async (): Promise<Registration[]> => {
+    try {
+        const database = await getDb();
+        const rows = await database.getAllAsync<any>(
+            `SELECT * FROM cattle_registrations WHERE is_synced = 0 ORDER BY timestamp ASC;`
+        );
+
+        return rows.map(row => mapRowToRegistration(row));
+    } catch (error) {
+        console.error('❌ Failed to get unsynced registrations:', error);
+        throw error;
+    }
+};
+
+export const markRegistrationAsSynced = async (id: number, dbId: string): Promise<void> => {
+    try {
+        const database = await getDb();
+        await database.runAsync(
+            `UPDATE cattle_registrations SET is_synced = 1, db_id = ? WHERE id = ?;`,
+            [dbId, id]
+        );
+        console.log(`✅ Marked registration ${id} as synced with dbId ${dbId}`);
+    } catch (error) {
+        console.error(`❌ Failed to mark registration ${id} as synced:`, error);
+        throw error;
+    }
+};
+
+const mapRowToRegistration = (row: any): Registration => ({
+    id: row.id,
+    pashuAadharTagId: row.pashu_aadhar_tag_id,
+    species: row.species,
+    breed: row.breed,
+    isBreedOverridden: !!row.is_breed_overridden,
+    overrideReason: row.override_reason,
+    phenotypicCharacteristics: row.phenotypic_characteristics,
+    identificationMarks: row.identification_marks,
+    sex: row.sex,
+    ageYears: row.age_years,
+    ageMonths: row.age_months,
+    reproductiveBreedingHistory: row.reproductive_breeding_history,
+    healthVaccinationRecords: row.health_vaccination_records,
+    milkYieldInfo: row.milk_yield_info,
+    birthDeathRegistrationInfo: row.birth_death_registration_info,
+    ownerName: row.owner_name,
+    ownerAddress: row.owner_address,
+    ownerContact: row.owner_contact,
+    premisesType: row.premises_type,
+    premisesLocation: row.premises_location,
+    imageUris: JSON.parse(row.image_uris),
+    predictions: JSON.parse(row.predictions),
+    latitude: row.latitude,
+    longitude: row.longitude,
+    locationName: row.location_name,
+    timestamp: row.timestamp,
+    userId: row.user_id,
+    userRole: row.user_role,
+    isSynced: !!row.is_synced,
+    dbId: row.db_id,
+});

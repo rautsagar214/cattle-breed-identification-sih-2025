@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const workerRoutes = require('./routes/workerRoutes');
 const historyRoutes = require('./routes/historyRoutes');
+const registrationRoutes = require('./routes/registrationRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +50,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/workers', workerRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/registration', registrationRoutes);
 
 // 404 handler
 app.use((req, res) => {

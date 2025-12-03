@@ -12,6 +12,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useLanguage } from '../src/contexts/LanguageContext';
+import { useAuth } from '../src/contexts/AuthContext';
 
 interface BreedPrediction {
   breed: string;
@@ -39,6 +40,7 @@ const { width } = Dimensions.get('window');
 function ResultScreen(): React.JSX.Element {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
 
   // Initialize with default data to avoid null
@@ -292,6 +294,28 @@ function ResultScreen(): React.JSX.Element {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
+
+          {user?.role === 'flw' && (
+            <TouchableOpacity
+              style={styles.primaryAction}
+              onPress={() => {
+                router.push({
+                  pathname: '/register',
+                  params: {
+                    breedName: result.breedName,
+                    allImages: JSON.stringify(result.allImages),
+                    allPredictions: JSON.stringify(result.allPredictions),
+                    latitude: result.latitude,
+                    longitude: result.longitude,
+                    locationName: result.locationName,
+                    timestamp: result.timestamp
+                  }
+                } as any);
+              }}
+            >
+              <Text style={styles.actionText}>📝 Register Cattle</Text>
+            </TouchableOpacity>
+          )}
 
 
           <TouchableOpacity
