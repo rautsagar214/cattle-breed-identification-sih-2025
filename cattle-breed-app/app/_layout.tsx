@@ -4,7 +4,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '../src/contexts/AuthContext';
 import { NetworkProvider } from '../src/contexts/NetworkContext';
@@ -12,7 +12,9 @@ import { LanguageProvider } from '../src/contexts/LanguageContext';
 import { useRouter, useSegments } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as SplashScreen from 'expo-splash-screen';
+import { Asset } from 'expo-asset';
 import { setupSyncListener } from '../src/services/SyncService';
+import { initDatabase } from '../src/services/db';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -26,6 +28,7 @@ function RootLayoutContent() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [isDbReady, setIsDbReady] = useState(false);
 
   useEffect(() => {
     // Request permissions on app start
@@ -38,12 +41,46 @@ function RootLayoutContent() {
   }, []);
 
   useEffect(() => {
-    // Setup global sync listener
-    const unsubscribe = setupSyncListener();
+    let unsubscribe: (() => void) | undefined;
+
+    const init = async () => {
+      // Start initializing database
+      const dbPromise = initDatabase();
+
+      // Start preloading images (non-blocking for splash screen)
+      // We don't await this here so the app opens immediately after DB is ready
+      const assetsPromise = Asset.loadAsync([
+        require('../assets/images/_1.png'),
+        require('../assets/images/_2.png'),
+        require('../assets/images/_3.png'),
+        require('../assets/images/_4.png'),
+      ]);
+
+      // Wait for DB only
+      await dbPromise;
+      setIsDbReady(true);
+
+      // Setup global sync listener
+      unsubscribe = setupSyncListener();
+
+      // Log asset loading errors if any (optional)
+      assetsPromise.catch(e => console.warn("Error preloading assets:", e));
+    };
+
+    init();
+
     return () => {
-      unsubscribe();
+      if (unsubscribe) {
+        unsubscribe();
+      }
     };
   }, []);
+
+  useEffect(() => {
+    if (isDbReady && !loading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isDbReady, loading]);
 
   useEffect(() => {
     if (loading) return;

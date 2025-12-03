@@ -87,7 +87,7 @@ exports.syncRegistration = async (req, res) => {
             phenotypicCharacteristics, identificationMarks, sex, ageYears, ageMonths,
             reproductiveBreedingHistory, healthVaccinationRecords, milkYieldInfo, birthDeathRegistrationInfo,
             ownerName, ownerAddress, ownerContact, premisesType, premisesLocation,
-            imageUrls, JSON.stringify(predictions), latitude || null, longitude || null, locationName || null, createdAt
+            imageUrls, JSON.stringify(predictions.slice(0, 3)), latitude || null, longitude || null, locationName || null, createdAt
         ];
 
         const result = await client.query(query, values);

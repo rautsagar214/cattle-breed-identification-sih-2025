@@ -136,7 +136,17 @@ export default function HistoryScreen() {
         const mainImage = item.imageUris[0];
 
         return (
-            <View style={styles.card}>
+            <TouchableOpacity
+                style={styles.card}
+                onPress={() => {
+                    router.push({
+                        pathname: '/registration-detail',
+                        params: {
+                            registrationData: JSON.stringify(item)
+                        }
+                    } as any);
+                }}
+            >
                 <Image source={{ uri: mainImage }} style={styles.thumbnail} />
                 <View style={styles.cardContent}>
                     <View style={styles.headerRow}>
@@ -162,7 +172,7 @@ export default function HistoryScreen() {
                         </Text>
                     </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 

@@ -196,6 +196,7 @@ export default function UploadScreen(): React.JSX.Element {
 
             // Save images to permanent storage (ONLY FOR LOGGED IN USERS)
             const permanentImageUris: string[] = [];
+            let locationData: { latitude: number; longitude: number; name?: string } | undefined = undefined;
 
             if (user?.id !== -1) {
                 try {
@@ -212,7 +213,6 @@ export default function UploadScreen(): React.JSX.Element {
                 // Save to SQLite DB (ONLY FOR LOGGED IN USERS)
                 try {
                     // Fetch location
-                    let locationData = undefined;
                     const { status } = await Location.requestForegroundPermissionsAsync();
                     if (status === 'granted') {
                         const location = await Location.getCurrentPositionAsync({});
@@ -269,6 +269,11 @@ export default function UploadScreen(): React.JSX.Element {
                     careTips: JSON.stringify(analysisResult.careTips),
                     description: breedData.description || `${analysisResult.breedName} cattle breed detected`,
                     isGuest: user?.id === -1 ? 'true' : 'false', // Pass guest status
+                    // Pass location data
+                    latitude: locationData?.latitude,
+                    longitude: locationData?.longitude,
+                    locationName: locationData?.name,
+                    timestamp: Date.now(),
                 }
             } as any);
 

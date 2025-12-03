@@ -112,35 +112,73 @@ export const initDatabase = async () => {
         `);
         console.log('✅ Database initialized');
 
-        // Attempt to add columns if they don't exist (for migration)
-        await addLocationColumns();
+        // Run migrations to ensure schema is up to date
+        // await runMigrations();
     } catch (error) {
         console.error('❌ Database initialization failed:', error);
     }
 };
 
-const addLocationColumns = async () => {
+const runMigrations = async () => {
     try {
         const database = await getDb();
-        const columns = [
-            'latitude REAL',
-            'longitude REAL',
-            'location_name TEXT',
-            'is_synced INTEGER DEFAULT 0',
-            'db_id TEXT',
-            'user_id TEXT',
-            'user_role TEXT'
-        ];
-        for (const col of columns) {
+
+        // Helper to get existing columns for a table
+        const getExistingColumns = async (tableName: string): Promise<Set<string>> => {
             try {
-                await database.execAsync(`ALTER TABLE scan_history ADD COLUMN ${col};`);
-                console.log(`✅ Added column: ${col}`);
+                const result = await database.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName});`);
+                return new Set(result.map(col => col.name));
             } catch (e) {
-                // Ignore error if column exists
+                console.warn(`Could not get table info for ${tableName}`, e);
+                return new Set();
+            }
+        };
+
+        // 1. Scan History Migrations
+        const scanHistoryColumns = [
+            { name: 'latitude', type: 'REAL' },
+            { name: 'longitude', type: 'REAL' },
+            { name: 'location_name', type: 'TEXT' },
+            { name: 'is_synced', type: 'INTEGER DEFAULT 0' },
+            { name: 'db_id', type: 'TEXT' },
+            { name: 'user_id', type: 'TEXT' },
+            { name: 'user_role', type: 'TEXT' }
+        ];
+
+        const existingScanColumns = await getExistingColumns('scan_history');
+
+        for (const col of scanHistoryColumns) {
+            if (!existingScanColumns.has(col.name)) {
+                try {
+                    await database.execAsync(`ALTER TABLE scan_history ADD COLUMN ${col.name} ${col.type};`);
+                    console.log(`✅ Added column to scan_history: ${col.name}`);
+                } catch (e) {
+                    console.error(`Failed to add column ${col.name} to scan_history`, e);
+                }
             }
         }
+
+        // 2. Cattle Registrations Migrations
+        const registrationColumns = [
+            { name: 'is_synced', type: 'INTEGER DEFAULT 0' },
+            { name: 'db_id', type: 'TEXT' },
+        ];
+
+        const existingRegColumns = await getExistingColumns('cattle_registrations');
+
+        for (const col of registrationColumns) {
+            if (!existingRegColumns.has(col.name)) {
+                try {
+                    await database.execAsync(`ALTER TABLE cattle_registrations ADD COLUMN ${col.name} ${col.type};`);
+                    console.log(`✅ Added column to cattle_registrations: ${col.name}`);
+                } catch (e) {
+                    console.error(`Failed to add column ${col.name} to cattle_registrations`, e);
+                }
+            }
+        }
+
     } catch (error) {
-        console.error('Error adding columns:', error);
+        console.error('Error running migrations:', error);
     }
 };
 

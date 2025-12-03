@@ -57,6 +57,13 @@ export default function RegisterCattleScreen() {
             return;
         }
 
+        // Validate Phone Number
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(ownerContact)) {
+            Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit phone number.');
+            return;
+        }
+
         setLoading(true);
         try {
             await saveRegistration({
