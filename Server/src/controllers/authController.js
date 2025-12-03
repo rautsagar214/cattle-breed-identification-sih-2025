@@ -376,9 +376,10 @@ const sendOtp = async (req, res) => {
     if (process.env.FAST2SMS_API_KEY) {
       try {
         const response = await axios.post('https://www.fast2sms.com/dev/bulkV2', {
-          "route": "otp",
-          "variable_values": '',
-          "schedule_time": '',
+          "route": "q",
+          "message": message,
+          "language": "english",
+          "flash": 0,
           "numbers": phone,
         }, {
           headers: {
