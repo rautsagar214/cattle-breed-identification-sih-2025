@@ -38,6 +38,40 @@ const updateSchema = async () => {
         await client.query(createPredictionRunsTable);
         console.log('✅ Created new prediction_runs table with image_urls TEXT[]');
 
+        // Create approved_samples table
+        const createApprovedSamplesTable = `
+            CREATE TABLE IF NOT EXISTS approved_samples (
+                id SERIAL PRIMARY KEY,
+                run_id INT NOT NULL,
+                original_image_url TEXT,
+                final_image_url TEXT,
+                final_angle VARCHAR(50),
+                evaluator_final_breed VARCHAR(100),
+                average_top3_predictions JSONB,
+                location_latitude FLOAT8,
+                location_longitude FLOAT8,
+                quality_notes JSONB,
+                evaluator_id INT,
+                evaluation_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        await client.query(createApprovedSamplesTable);
+        console.log('✅ Created approved_samples table');
+
+        // Create rejected_samples table
+        const createRejectedSamplesTable = `
+            CREATE TABLE IF NOT EXISTS rejected_samples (
+                id SERIAL PRIMARY KEY,
+                run_id INT NOT NULL,
+                image_url TEXT,
+                reject_reason TEXT,
+                evaluator_id INT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        await client.query(createRejectedSamplesTable);
+        console.log('✅ Created rejected_samples table');
+
     } catch (error) {
         console.error('❌ Schema update failed:', error.message);
     } finally {

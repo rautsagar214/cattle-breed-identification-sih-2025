@@ -7,6 +7,7 @@ const errorHandler = require('./middleware/errorHandler');
 const workerRoutes = require('./routes/workerRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -51,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/workers', workerRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/registration', registrationRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler
 app.use((req, res) => {

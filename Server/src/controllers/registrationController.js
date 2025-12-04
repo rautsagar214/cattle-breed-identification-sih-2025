@@ -111,3 +111,116 @@ exports.syncRegistration = async (req, res) => {
         }
     }
 };
+
+exports.getAllRegistrations = async (req, res) => {
+    let client;
+    try {
+        const {
+            page = 1,
+            limit = 10,
+            search,
+            state,
+            city,
+            species,
+            breed,
+            premisesType,
+            startDate,
+            endDate
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        client = await getDbClient();
+
+        let query = `
+            SELECT r.*, w.name as registered_by_name 
+            FROM cattle_registrations r
+            LEFT JOIN workers w ON r.user_id = w.id
+            WHERE 1=1
+        `;
+        let countQuery = `SELECT COUNT(*) FROM cattle_registrations WHERE 1=1`;
+        const values = [];
+        let paramIndex = 1;
+
+        if (search) {
+            query += ` AND (r.pashu_aadhar_tag_id ILIKE $${paramIndex} OR r.owner_name ILIKE $${paramIndex} OR r.breed ILIKE $${paramIndex})`;
+            countQuery += ` AND (pashu_aadhar_tag_id ILIKE $${paramIndex} OR owner_name ILIKE $${paramIndex} OR breed ILIKE $${paramIndex})`;
+            values.push(`%${search}%`);
+            paramIndex++;
+        }
+
+        if (state) {
+            query += ` AND (r.premises_location ILIKE $${paramIndex} OR r.owner_address ILIKE $${paramIndex})`;
+            countQuery += ` AND (premises_location ILIKE $${paramIndex} OR owner_address ILIKE $${paramIndex})`;
+            values.push(`%${state}%`);
+            paramIndex++;
+        }
+
+        if (city) {
+            query += ` AND (r.premises_location ILIKE $${paramIndex} OR r.owner_address ILIKE $${paramIndex} OR r.location_name ILIKE $${paramIndex})`;
+            countQuery += ` AND (premises_location ILIKE $${paramIndex} OR owner_address ILIKE $${paramIndex} OR location_name ILIKE $${paramIndex})`;
+            values.push(`%${city}%`);
+            paramIndex++;
+        }
+
+        if (species) {
+            query += ` AND r.species = $${paramIndex}`;
+            countQuery += ` AND species = $${paramIndex}`;
+            values.push(species);
+            paramIndex++;
+        }
+
+        if (breed) {
+            query += ` AND r.breed = $${paramIndex}`;
+            countQuery += ` AND breed = $${paramIndex}`;
+            values.push(breed);
+            paramIndex++;
+        }
+
+        if (premisesType) {
+            query += ` AND r.premises_type = $${paramIndex}`;
+            countQuery += ` AND premises_type = $${paramIndex}`;
+            values.push(premisesType);
+            paramIndex++;
+        }
+
+        if (startDate) {
+            query += ` AND r.created_at >= $${paramIndex}`;
+            countQuery += ` AND created_at >= $${paramIndex}`;
+            values.push(startDate);
+            paramIndex++;
+        }
+
+        if (endDate) {
+            query += ` AND r.created_at <= $${paramIndex}`;
+            countQuery += ` AND created_at <= $${paramIndex}`;
+            values.push(endDate);
+            paramIndex++;
+        }
+
+        query += ` ORDER BY r.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+
+        const queryValues = [...values, limit, offset];
+
+        const result = await client.query(query, queryValues);
+        const countResult = await client.query(countQuery, values);
+
+        res.status(200).json({
+            success: true,
+            data: result.rows,
+            pagination: {
+                total: parseInt(countResult.rows[0].count),
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching registrations:', error);
+        res.status(500).json({ success: false, message: 'Internal server error', error: error.message });
+    } finally {
+        if (client) {
+            await client.end();
+        }
+    }
+};
