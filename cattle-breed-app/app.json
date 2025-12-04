@@ -20,10 +20,11 @@
     },
     "android": {
       "usesCleartextTraffic": true,
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.jpg"
-      },
       "package": "com.sagar6063.cattlebreedapp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.jpg",
+        "backgroundColor": "#FFFFFF"
+      },
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
@@ -42,7 +43,7 @@
         "expo-camera",
         {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos of cattle for breed identification.",
-          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone (not used, but required by expo-camera).",
+          "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone.",
           "recordAudioAndroid": false
         }
       ],

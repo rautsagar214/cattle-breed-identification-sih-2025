@@ -172,6 +172,9 @@ const syncSingleRegistration = async (reg: Registration) => {
 
 // Setup auto-sync listener
 export const setupSyncListener = () => {
+    // Check immediately on load
+    syncPendingScans();
+
     const unsubscribe = NetInfo.addEventListener(state => {
         if (state.isConnected) {
             syncPendingScans();

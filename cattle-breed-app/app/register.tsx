@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../src/contexts/AuthContext';
 import { saveRegistration } from '../src/services/db';
+import { syncPendingRegistrations, syncPendingScans } from '../src/services/SyncService';
 
 export default function RegisterCattleScreen() {
     const router = useRouter();
@@ -98,7 +99,14 @@ export default function RegisterCattleScreen() {
             });
 
             Alert.alert('Success', 'Cattle registered successfully (saved locally)', [
-                { text: 'OK', onPress: () => router.replace('/(tabs)/history') }
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        // Trigger sync immediately
+                        syncPendingRegistrations();
+                        router.replace('/(tabs)/history');
+                    }
+                }
             ]);
         } catch (error) {
             console.error('Registration failed:', error);

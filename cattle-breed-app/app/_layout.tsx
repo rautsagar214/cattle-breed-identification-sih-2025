@@ -110,6 +110,7 @@ function RootLayoutContent() {
         <Stack.Screen name="settings" options={{ headerShown: false, title: 'Settings' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         <Stack.Screen name="register" options={{ headerShown: false, title: 'Register Cattle' }} />
+        <Stack.Screen name="registration-detail" options={{ headerShown: false, title: 'Cattle Details' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

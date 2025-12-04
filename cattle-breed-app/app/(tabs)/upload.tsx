@@ -25,6 +25,7 @@ import { validateImageSize, validateImageType } from '../../src/utils/security';
 import { detectBreed, detectMultipleBreeds, initializeModel } from '../../src/services/tflite';
 import { GuidanceAnimation } from '../../src/components/GuidanceAnimation';
 import { initDatabase, saveScanResult } from '../../src/services/db';
+import { syncPendingScans } from '../../src/services/SyncService';
 
 export default function UploadScreen(): React.JSX.Element {
     const router = useRouter();
@@ -247,6 +248,9 @@ export default function UploadScreen(): React.JSX.Element {
                         user?.role
                     );
                     console.log('💾 Result saved to history DB with location');
+
+                    // Trigger sync immediately if online
+                    syncPendingScans();
                 } catch (dbError) {
                     console.error('Failed to save to DB:', dbError);
                 }
