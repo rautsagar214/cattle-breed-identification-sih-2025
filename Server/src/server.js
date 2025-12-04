@@ -8,6 +8,8 @@ const workerRoutes = require('./routes/workerRoutes');
 const historyRoutes = require('./routes/historyRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const datasetRoutes = require('./routes/datasetRoutes');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -18,6 +20,9 @@ const app = express();
 // Middleware
 app.use(express.json({ limit: '50mb' })); // Increased limit for base64 images
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve static files for datasets
+app.use('/datasets', express.static(path.join(__dirname, '../public/datasets')));
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
@@ -53,6 +58,7 @@ app.use('/api/workers', workerRoutes);
 app.use('/api/history', historyRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/dataset', datasetRoutes);
 
 // 404 handler
 app.use((req, res) => {

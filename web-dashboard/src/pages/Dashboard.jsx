@@ -9,7 +9,8 @@ import {
     FileText,
     ClipboardCheck,
     ShieldCheck,
-    ShieldAlert
+    ShieldAlert,
+    Database
 } from 'lucide-react';
 import a6logo from '../assets/a6_logo.svg';
 import FlwDirectory from '../components/FlwDirectory';
@@ -18,6 +19,7 @@ import RegistrationsList from '../components/RegistrationsList';
 import PendingEvaluations from '../components/PendingEvaluations';
 import ApprovedSamples from '../components/ApprovedSamples';
 import RejectedSamples from '../components/RejectedSamples';
+import DatasetAssembly from '../components/DatasetAssembly';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -119,6 +121,19 @@ const Dashboard = () => {
                         <ShieldAlert size={20} />
                         {sidebarOpen && <span>Rejected Samples</span>}
                     </button>
+
+                    <div className="pt-4 pb-2">
+                        {sidebarOpen && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">ML Ops</p>}
+                        {!sidebarOpen && <div className="h-px bg-gray-700 mx-4 my-2"></div>}
+                    </div>
+
+                    <button
+                        onClick={() => setActiveTab('dataset-assembly')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'dataset-assembly' ? 'bg-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
+                    >
+                        <Database size={20} />
+                        {sidebarOpen && <span>Dataset Assembly</span>}
+                    </button>
                 </nav>
 
                 <div className="p-4 border-t border-gray-700">
@@ -175,6 +190,7 @@ const Dashboard = () => {
                     {activeTab === 'pending-evaluations' && <PendingEvaluations />}
                     {activeTab === 'approved-samples' && <ApprovedSamples />}
                     {activeTab === 'rejected-samples' && <RejectedSamples />}
+                    {activeTab === 'dataset-assembly' && <DatasetAssembly />}
                 </main >
             </div >
         </div >

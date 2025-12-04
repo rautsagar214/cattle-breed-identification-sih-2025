@@ -72,6 +72,20 @@ const updateSchema = async () => {
         await client.query(createRejectedSamplesTable);
         console.log('✅ Created rejected_samples table');
 
+        // Create dataset_versions table
+        const createDatasetVersionsTable = `
+            CREATE TABLE IF NOT EXISTS dataset_versions (
+                id SERIAL PRIMARY KEY,
+                breed VARCHAR(100) NOT NULL,
+                version INT NOT NULL,
+                file_path TEXT NOT NULL,
+                created_by INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        await client.query(createDatasetVersionsTable);
+        console.log('✅ Created dataset_versions table');
+
     } catch (error) {
         console.error('❌ Schema update failed:', error.message);
     } finally {
