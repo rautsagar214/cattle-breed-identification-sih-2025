@@ -20,6 +20,8 @@ import PendingEvaluations from '../components/PendingEvaluations';
 import ApprovedSamples from '../components/ApprovedSamples';
 import RejectedSamples from '../components/RejectedSamples';
 import DatasetAssembly from '../components/DatasetAssembly';
+import Analytics from './Analytics';
+import { BarChart2 } from 'lucide-react';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -97,6 +99,14 @@ const Dashboard = () => {
                         {sidebarOpen && <p className="px-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Evaluation</p>}
                         {!sidebarOpen && <div className="h-px bg-gray-700 mx-4 my-2"></div>}
                     </div>
+
+                    <button
+                        onClick={() => setActiveTab('analytics')}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'analytics' ? 'bg-secondary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}
+                    >
+                        <BarChart2 size={20} />
+                        {sidebarOpen && <span>Analytics</span>}
+                    </button>
 
                     <button
                         onClick={() => setActiveTab('pending-evaluations')}
@@ -190,6 +200,7 @@ const Dashboard = () => {
                     {activeTab === 'pending-evaluations' && <PendingEvaluations />}
                     {activeTab === 'approved-samples' && <ApprovedSamples />}
                     {activeTab === 'rejected-samples' && <RejectedSamples />}
+                    {activeTab === 'analytics' && <Analytics />}
                     {activeTab === 'dataset-assembly' && <DatasetAssembly />}
                 </main >
             </div >

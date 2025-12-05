@@ -9,6 +9,7 @@ const historyRoutes = require('./routes/historyRoutes');
 const registrationRoutes = require('./routes/registrationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const datasetRoutes = require('./routes/datasetRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 const path = require('path');
 
 // Load environment variables
@@ -59,6 +60,7 @@ app.use('/api/history', historyRoutes);
 app.use('/api/registration', registrationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/dataset', datasetRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler
 app.use((req, res) => {
