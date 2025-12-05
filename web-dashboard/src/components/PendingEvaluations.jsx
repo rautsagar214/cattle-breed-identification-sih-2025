@@ -24,7 +24,7 @@ const PendingEvaluations = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:3000/api/admin/pending-evaluations', {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/pending-evaluations`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -42,7 +42,7 @@ const PendingEvaluations = () => {
         try {
             setDetailsLoading(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`http://localhost:3000/api/admin/run/${runId}`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/run/${runId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -72,7 +72,7 @@ const PendingEvaluations = () => {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const API_URL = 'http://localhost:3000'; // Or import from env
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'; // Or import from env
 
             let endpoint = '';
             if (result.reject_reason) {

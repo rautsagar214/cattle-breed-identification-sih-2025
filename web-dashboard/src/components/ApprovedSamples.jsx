@@ -16,7 +16,7 @@ const ApprovedSamples = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:3000/api/admin/approved-samples', {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/admin/approved-samples`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {

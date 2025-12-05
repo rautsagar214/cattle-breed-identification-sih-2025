@@ -24,7 +24,7 @@ const DatasetAssembly = () => {
         try {
             setLoadingVersions(true);
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:3000/api/dataset/dataset-versions', {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/dataset/dataset-versions`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             if (response.data.success) {
@@ -49,7 +49,7 @@ const DatasetAssembly = () => {
 
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.post('http://localhost:3000/api/dataset/generate-dataset',
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/dataset/generate-dataset`,
                 { breed: selectedBreed },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -101,8 +101,8 @@ const DatasetAssembly = () => {
                         onClick={handleGenerate}
                         disabled={!selectedBreed || isGenerating}
                         className={`px-6 py-2.5 rounded-xl font-semibold text-white flex items-center gap-2 transition-all ${!selectedBreed || isGenerating
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
                             }`}
                     >
                         {isGenerating ? (
@@ -166,7 +166,7 @@ const DatasetAssembly = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <a
-                                                    href={`http://localhost:3000${version.file_path}`}
+                                                    href={`${import.meta.env.VITE_API_URL}${version.file_path}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 font-medium text-sm transition-colors"
